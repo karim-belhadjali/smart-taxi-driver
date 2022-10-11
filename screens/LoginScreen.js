@@ -36,7 +36,6 @@ const LoginScreen = () => {
             email: user.email,
           })
         );
-        console.log(user.uid, user.email);
         navigation.navigate("HomeScreen");
       })
       .catch((error) => console.log(error.message));

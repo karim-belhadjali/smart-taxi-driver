@@ -15,6 +15,8 @@ import { Icon } from "react-native-elements";
 import * as TaskManager from "expo-task-manager";
 import * as Location from "expo-location";
 
+import { functions, httpsCallable, db } from "../firebase";
+
 import {
   selectDestination,
   selectOrigin,
@@ -25,30 +27,45 @@ import { useDispatch, useSelector } from "react-redux";
 import { setDestination, setOrigin } from "../app/slices/navigationSlice";
 const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
 import tw from "twrnc";
+import { LogBox } from "react-native";
 
-import { db } from "../firebase";
 import {
   doc,
   onSnapshot,
   collection,
+  setDoc,
   query,
   runTransaction,
 } from "firebase/firestore";
 
 const LOCATION_TASK_NAME = "background-location-task";
-TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
-  if (error) {
-    // Error occurred - check `error.message` for more details.
-    return;
-  }
-  if (data) {
-    const { locations } = data;
-    // do something with the locations captured in the background
-    console.log("Updating Location", locations);
-  }
-});
 
 const HomeScreen = () => {
+  LogBox.ignoreLogs(["Setting a timer"]);
+  TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
+    if (error) {
+      // Error occurred - check `error.message` for more details.
+      return;
+    }
+    if (data) {
+      const { locations } = data;
+      setDoc(
+        doc(db, "Current Ride", currentDoc.uid),
+        {
+          driver: {
+            driverLocation: {
+              location: {
+                lat: locations[0].coords.latitude,
+                lng: locations[0].coords.longitude,
+              },
+            },
+          },
+        },
+        { merge: true }
+      );
+    }
+  });
+
   const dispatch = useDispatch();
   const origin = useSelector(selectOrigin);
   const destination = useSelector(selectDestination);
@@ -90,7 +107,7 @@ const HomeScreen = () => {
   useEffect(() => {
     if (!requestSent) return;
     let listner = handleListener();
-    // return () => listner();
+    return () => listner();
   }, [requestSent]);
 
   const handleListener = async () => {
@@ -117,11 +134,31 @@ const HomeScreen = () => {
     });
     return ref;
   };
+
   const respond = async () => {
     let result = await accept(currentDoc);
     if (result) {
       console.log("accepted request: success");
       startLocation();
+      // const deleteRequestedRide = httpsCallable(
+      //   functions,
+      //   "deleteRequestedRide"
+      // );
+      // deleteRequestedRide({
+      //   uid: currentDoc.uid,
+      // }).catch((error) => {
+      //   console.log("delete request: failure");
+      // });
+      const createNewRide = httpsCallable(functions, "CreateNewRide");
+      createNewRide({
+        uid: currentDoc.uid,
+        driverId: currentDoc.driverId,
+        driverLocation: currentLocation,
+        origin: currentDoc.origin,
+        destination: currentDoc.destination,
+        phoneNumber: currentDoc.phoneNumber,
+        price: "",
+      });
     } else {
       console.log("accepted request: failure");
       setoccupied(false);
@@ -130,11 +167,9 @@ const HomeScreen = () => {
   };
 
   const startLocation = async () => {
-    // await Location.requestForegroundPermissionsAsync();
-    // await Location.requestBackgroundPermissionsAsync();
     await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
       accuracy: Location.Accuracy.BestForNavigation,
-      timeInterval: 15000,
+      timeInterval: 5000,
       distanceInterval: 20,
       foregroundService: {
         notificationTitle: "En ligne ... ",
@@ -145,6 +180,7 @@ const HomeScreen = () => {
     });
     //navigation.navigate("LoginScreen");
   };
+
   const stopLocation = async () => {
     Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME).then(
       (value) => {
@@ -166,11 +202,11 @@ const HomeScreen = () => {
           response = 0;
           return;
         }
-        transaction.update(docref, {
-          accepted: true,
-          driverId: user.uid,
-          driverLocation: currentLocation,
-        });
+        // transaction.update(docref, {
+        //   accepted: true,
+        //   driverId: user.uid,
+        //   driverLocation: currentLocation,
+        // });
 
         response = {
           origin: docu.origin,
