@@ -10,7 +10,7 @@ exports.CreateNewRide = functions.https.onCall((data, context) => {
       "only authenticated users can add requests"
     );
   }
-  return admin
+  admin
     .firestore()
     .collection("Current Ride")
     .doc(data.uid)
@@ -18,6 +18,7 @@ exports.CreateNewRide = functions.https.onCall((data, context) => {
       uid: data.uid,
       driver: {
         driverId: data.driverId,
+        driverstartingLocation: data.driverLocation,
         driverLocation: data.driverLocation,
       },
       client: {
@@ -26,8 +27,21 @@ exports.CreateNewRide = functions.https.onCall((data, context) => {
         phoneNumber: data.phoneNumber,
       },
       price: data.price,
+      canceledByDriver: false,
+      canceledByClient: false,
+      startedAt: data.started,
+      finished: false,
+    })
+    .then(() => {
+      return admin
+        .firestore()
+        .collection("Current Ride")
+        .doc(data.uid)
+        .get()
+        .data();
     });
 });
+
 // http callable function (adding a request)
 exports.UpdateDriverLocation = functions.https.onCall((data, context) => {
   if (!context.auth) {
@@ -36,7 +50,7 @@ exports.UpdateDriverLocation = functions.https.onCall((data, context) => {
       "only authenticated users can add requests"
     );
   }
-  return admin
+  admin
     .firestore()
     .collection("Current Ride")
     .doc(data.uid)
