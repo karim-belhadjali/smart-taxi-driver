@@ -36,6 +36,8 @@ import {
   setDoc,
   query,
   runTransaction,
+  deleteDoc,
+  getDoc,
 } from "firebase/firestore";
 
 const LOCATION_TASK_NAME = "background-location-task";
@@ -78,6 +80,8 @@ const HomeScreen = () => {
   const [occupied, setoccupied] = useState(false);
   const [error, seterror] = useState();
   const [currentDoc, setcurrentDoc] = useState("");
+  const [currentRide, setcurrentRide] = useState(false);
+  const [actionButton, setactionButton] = useState(false);
 
   useEffect(() => {
     if (!origin || !destination) return;
@@ -97,6 +101,7 @@ const HomeScreen = () => {
     setcurrentDoc(false);
     setrequestSent(true);
     setoccupied(false);
+    setactionButton(false);
   }, []);
 
   useEffect(() => {
@@ -105,10 +110,36 @@ const HomeScreen = () => {
   }, [occupied]);
 
   useEffect(() => {
-    if (!requestSent) return;
+    if (occupied && listner) listner();
+    if (occupied) return;
     let listner = handleListener();
-    return () => listner();
-  }, [requestSent]);
+    //return () => listner();
+  }, [occupied]);
+
+  useEffect(() => {
+    if (!currentRide && ref) ref();
+    if (!currentRide) return;
+    const ref = onSnapshot(doc(db, "Current Ride", currentDoc.uid), (doc) => {
+      if (doc.exists()) {
+        setcurrentRide(doc.data());
+        if (doc?.data()?.canceledByClient) {
+          setoccupied(false);
+          setactionButton(false);
+          dispatch(setOrigin(undefined));
+          dispatch(setDestination(undefined));
+          setcurrentDoc(undefined);
+          stopLocation();
+          setcurrentRide(false);
+          ref();
+          return;
+        }
+      } else {
+        ref();
+        return;
+      }
+    });
+    return () => ref();
+  }, [currentRide]);
 
   const handleListener = async () => {
     const q = query(collection(db, "Ride Requests"));
@@ -139,25 +170,30 @@ const HomeScreen = () => {
     let result = await accept(currentDoc);
     if (result) {
       console.log("accepted request: success");
+      setactionButton(true);
       startLocation();
-      // const deleteRequestedRide = httpsCallable(
-      //   functions,
-      //   "deleteRequestedRide"
-      // );
-      // deleteRequestedRide({
-      //   uid: currentDoc.uid,
-      // }).catch((error) => {
-      //   console.log("delete request: failure");
-      // });
-      const createNewRide = httpsCallable(functions, "CreateNewRide");
-      createNewRide({
+      setDoc(doc(db, "Current Ride", currentDoc.uid), {
         uid: currentDoc.uid,
-        driverId: currentDoc.driverId,
-        driverLocation: currentLocation,
-        origin: currentDoc.origin,
-        destination: currentDoc.destination,
-        phoneNumber: currentDoc.phoneNumber,
+        driver: {
+          driverId: currentDoc.driverId,
+          driverstartingLocation: currentLocation,
+          driverLocation: currentLocation,
+        },
+        client: {
+          origin: currentDoc.origin,
+          destination: currentDoc.destination,
+          phoneNumber: currentDoc.phoneNumber,
+        },
         price: "",
+        canceledByDriver: false,
+        canceledByClient: false,
+        startedAt: Date.now(),
+        finished: false,
+      }).then(() => {
+        setcurrentRide(true);
+        setTimeout(() => {
+          deleteDoc(doc(db, "Ride Requests", currentDoc.uid));
+        }, 3000);
       });
     } else {
       console.log("accepted request: failure");
@@ -224,6 +260,81 @@ const HomeScreen = () => {
       dispatch(setDestination(response.destination));
       return true;
     }
+  };
+
+  const handleCancelDriver = () => {
+    setDoc(
+      doc(db, "Current Ride", currentDoc.uid),
+      { canceledByDriver: true },
+      { merge: true }
+    ).then(() => {
+      setDoc(
+        doc(
+          db,
+          "Canceled Rides",
+          currentDoc.uid + "_" + currentDoc.driverId + "_" + Date.now()
+        ),
+        {
+          userUid: currentRide.uid,
+          driverUid: currentRide.driver.driverId,
+          startTime: currentRide.startedAt,
+          FinishedTime: Date.now(),
+          finalPrice: currentRide.price,
+          driverStartingLocation: currentRide.driver.driverstartingLocation,
+          pickUpPlace: currentRide.client.origin,
+          rideDestination: currentRide.client.destination,
+          canceledBy: "driver",
+        }
+      ).then((e) => {
+        setoccupied(false);
+        setactionButton(false);
+        dispatch(setOrigin(undefined));
+        dispatch(setDestination(undefined));
+        setTimeout(() => {
+          deleteDoc(doc(db, "Current Ride", currentRide.uid));
+        }, 3000);
+        setcurrentDoc(undefined);
+        setcurrentRide(false);
+        stopLocation();
+      });
+    });
+  };
+
+  const handleFinishRide = () => {
+    setDoc(
+      doc(db, "Current Ride", currentRide.uid),
+      { finished: true },
+      { merge: true }
+    ).then(() => {
+      setDoc(
+        doc(
+          db,
+          "Canceled Rides",
+          currentRide.uid + "_" + currentRide.driver.driverId + "_" + Date.now()
+        ),
+        {
+          userUid: currentRide.uid,
+          driverUid: currentRide.driver.driverId,
+          startTime: currentRide.startedAt,
+          FinishedTime: Date.now(),
+          finalPrice: currentRide.price,
+          driverStartingLocation: currentRide.driver.driverstartingLocation,
+          pickUpPlace: currentRide.client.origin,
+          rideDestination: currentRide.client.destination,
+        }
+      ).then((e) => {
+        setoccupied(false);
+        setactionButton(false);
+        dispatch(setOrigin(undefined));
+        dispatch(setDestination(undefined));
+        setTimeout(() => {
+          deleteDoc(doc(db, "Current Ride", currentRide.uid));
+        }, 3000);
+        setcurrentDoc(undefined);
+        setcurrentRide(false);
+        stopLocation();
+      });
+    });
   };
 
   return (
@@ -382,6 +493,12 @@ const HomeScreen = () => {
           </Text>
         </TouchableOpacity>
       ) : undefined}
+      {actionButton && (
+        <>
+          <Button title="Cancel ride" onPress={handleCancelDriver} />
+          <Button title="Finish ride" onPress={handleFinishRide} />
+        </>
+      )}
       <Text ref={statusRef}>{occupied}</Text>
     </KeyboardAvoidingView>
   );
