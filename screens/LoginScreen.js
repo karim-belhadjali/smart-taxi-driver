@@ -15,6 +15,7 @@ import { auth } from "../firebase";
 import { useNavigation } from "@react-navigation/core";
 import { useDispatch } from "react-redux";
 import { setCurrentUser } from "../app/slices/navigationSlice";
+import tw from "twrnc";
 
 const LoginScreen = () => {
   // Ref or state management hooks
@@ -67,6 +68,12 @@ const LoginScreen = () => {
       <View style={styles.buttonContainer}>
         <TouchableOpacity onPress={() => setsign(true)} style={styles.button}>
           <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("RegisterScreen")}
+          style={[tw`mt-5`, styles.button]}
+        >
+          <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
