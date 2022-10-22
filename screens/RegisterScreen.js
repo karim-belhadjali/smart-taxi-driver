@@ -9,20 +9,13 @@ import {
 } from "react-native";
 import React, { useState, useEffect, useRef } from "react";
 
-import {
-  FirebaseRecaptchaVerifierModal,
-  FirebaseRecaptchaBanner,
-} from "expo-firebase-recaptcha";
-
 import AntDesign from "react-native-vector-icons/AntDesign";
 import tw from "twrnc";
 import TextInputs from "../components/TextInput";
 import NextBtn from "../components/NextBtn";
 import PickerList from "../components/PickerList";
-import DatePicker from "../components/DatePicker";
-import Input from "../components/Input";
 import RadioButtons from "../components/RadioButton";
-import { PhoneAuthProvider, signInWithCredential } from "firebase/auth";
+import { signInAnonymously } from "firebase/auth";
 
 import { auth, app, db } from "../firebase";
 
@@ -30,22 +23,24 @@ import { useNavigation } from "@react-navigation/core";
 import { TextInput } from "react-native";
 import PhoneInput from "../components/PhoneInput";
 import { doc, setDoc } from "firebase/firestore";
+import { useDispatch } from "react-redux";
+import { setCurrentUser } from "../app/slices/navigationSlice";
+
+const OTP_KEY = "b86a2a1a-5a08-48a4-8071-dea8dfcbb752";
 
 const CompleteProfileScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   const [currentStep, setcurrentStep] = useState("step1");
+  const [substep, setsubstep] = useState("step1");
 
   const [showerror, setshowerror] = useState(undefined);
-
-  const [firstGroupDisabled, setfirstGroupDisabled] = useState(false);
-  const [secondGroupDisabled, setsecondGroupDisabled] = useState(true);
 
   const gouvernorats = ["ben arous", "ariana", "mannouba"];
   const ville = ["Hammem-lif", "ezzahra", "rades"];
 
   // Phone Ref management hooks
-  const recaptchaVerifier = useRef(null);
   const [message, showMessage] = useState();
 
   // Code Ref management hooks
@@ -53,18 +48,13 @@ const CompleteProfileScreen = () => {
   const code3 = useRef();
   const code1 = useRef();
   const code4 = useRef();
-  const code5 = useRef();
-  const code6 = useRef();
 
   // Code State management hooks
-  const [verificationId, setVerificationId] = useState();
-  const [verifycode, setverifycode] = useState(false);
+
   const [codeNumber1, setcodeNumber1] = useState();
   const [codeNumber2, setcodeNumber2] = useState();
   const [codeNumber3, setcodeNumber3] = useState();
   const [codeNumber4, setcodeNumber4] = useState();
-  const [codeNumber5, setcodeNumber5] = useState();
-  const [codeNumber6, setcodeNumber6] = useState();
 
   //Driver attributes States
   const [selectedGov, setselectedGov] = useState(null);
@@ -77,7 +67,16 @@ const CompleteProfileScreen = () => {
   const [matricule1, setmatricule1] = useState();
   const [matricule2, setmatricule2] = useState();
   const [numAutorisation, setnumAutorisation] = useState();
+  const [carType, setcarType] = useState("");
 
+  //OTP
+  const [verificationId, setVerificationId] = useState();
+  const [verifycode, setverifycode] = useState(false);
+  //Border
+  const [border1, setborder1] = useState("#979797");
+  const [border2, setborder2] = useState("#979797");
+  const [border3, setborder3] = useState("#979797");
+  const [border4, setborder4] = useState("#979797");
   //Errors
   const [govErr, setgovErr] = useState(false);
   const [villeErr, setvilleErr] = useState(false);
@@ -86,7 +85,8 @@ const CompleteProfileScreen = () => {
   const [matricule2Err, setmatricule2Err] = useState(false);
 
   useEffect(() => {
-    setcurrentStep("step1");
+    //setcurrentStep("step1");
+    setsubstep("step1");
   }, []);
   useEffect(() => {
     if (currentStep === "step2") {
@@ -97,13 +97,7 @@ const CompleteProfileScreen = () => {
 
         try {
           if (mainPhoneNumber !== "" && mainPhoneNumber.length === 8) {
-            const phoneProvider = new PhoneAuthProvider(auth);
-            const verificationId = await phoneProvider.verifyPhoneNumber(
-              "+216" + mainPhoneNumber,
-              recaptchaVerifier.current
-            );
-            setVerificationId(verificationId);
-            setverifycode(true);
+            //await handleSendOtp();
           }
         } catch (err) {
           showMessage({ text: `Error: ${err.message}`, color: "red" });
@@ -134,67 +128,141 @@ const CompleteProfileScreen = () => {
   const handleReturn = () => {
     if (currentStep === "step2") {
       setcurrentStep("step1");
-    } else if (currentStep === "step3") {
+    } else if (currentStep === "step3" && substep == "step1") {
       setcurrentStep("step2");
+    } else if (currentStep === "step3" && substep == "step2") {
+      setsubstep("step1");
     } else {
       navigation.navigate("LoginScreen");
     }
   };
 
   const handleSave = async () => {
-    if (selectedGov !== null) {
-      setgovErr(false);
-      if (selectedVille !== null) {
-        setvilleErr(false);
-        if (numAutorisation) {
-          setautorisationErr(false);
-          if (matricule1) {
-            setmatricule1Err(false);
-            if (matricule2) {
-              setmatricule2Err(false);
-              setDoc(doc(db, "drivers", auth.currentUser.uid), {
-                uid: auth.currentUser.uid,
-                fullName: fullName,
-                email,
-                mainPhone: mainPhoneNumber,
-                secondPhone: secondayPhoneNumber,
-                staut: driverType,
-                autorisationNumber: numAutorisation,
-                gouvernorat: selectedGov,
-                ville: selectedVille,
-                matricule: matricule1 + matricule2,
-              }).then(() => {
-                navigation.navigate("HomeScreen");
-                navigation.reset({
-                  index: 0,
-                  routes: [
-                    {
-                      name: "HomeScreen",
-                    },
-                  ],
-                });
-              });
+    if (substep == "step2") {
+      if (selectedGov !== null) {
+        setgovErr(false);
+        if (selectedVille !== null) {
+          setvilleErr(false);
+          if (numAutorisation) {
+            setautorisationErr(false);
+            if (matricule1) {
+              setmatricule1Err(false);
+              if (matricule2) {
+                setmatricule2Err(false);
+                const currentDriver = {
+                  uid: numAutorisation,
+                  fullName: fullName,
+                  email,
+                  mainPhone: mainPhoneNumber,
+                  secondPhone: secondayPhoneNumber,
+                  staut: driverType,
+                  autorisationNumber: numAutorisation,
+                  gouvernorat: selectedGov,
+                  ville: selectedVille,
+                  matricule: `${matricule1}-TU-${matricule2}`,
+                  carType,
+                };
+                setDoc(doc(db, "drivers", numAutorisation), currentDriver).then(
+                  () => {
+                    dispatch(setCurrentUser(currentDriver));
+                    navigation.navigate("WaitingScreen");
+                    navigation.reset({
+                      index: 1,
+                      routes: [
+                        {
+                          name: "LoginScreen",
+                        },
+                        {
+                          name: "WaitingScreen",
+                        },
+                      ],
+                    });
+                  }
+                );
+              } else {
+                setmatricule2Err(true);
+              }
             } else {
-              setmatricule2Err(true);
+              setmatricule1Err(true);
             }
           } else {
-            setmatricule1Err(true);
+            setautorisationErr(true);
           }
         } else {
-          setautorisationErr(true);
+          setvilleErr(true);
         }
       } else {
-        setvilleErr(true);
+        setgovErr(true);
       }
     } else {
-      setgovErr(true);
+      setsubstep("step2");
     }
   };
 
   function isValidEmail(email) {
     return /\S+@\S+\.\S+/.test(email);
   }
+  const handleSendOtp = async () => {
+    var myHeaders = new Headers();
+    myHeaders.append("x-as-apikey", OTP_KEY);
+    myHeaders.append("Content-Type", "application/json");
 
+    var raw = JSON.stringify({
+      messageFormat:
+        "Hello, this is your OTP ${otp}. Please do not share it with anyone",
+      phoneNumber: "+21653081882",
+      otpLength: 4,
+      otpValidityInSeconds: 120,
+    });
+
+    var requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
+
+    fetch("https://www.getapistack.com/api/v1/otp/send", requestOptions)
+      .then((response) => response.text())
+      .then((data) => {
+        const result = JSON.parse(data);
+        setVerificationId(result.data.requestId);
+      })
+      .catch((error) => console.log("error", error));
+  };
+  const handleVerifyOtp = async (otps) => {
+    var myHeaders = new Headers();
+    myHeaders.append("x-as-apikey", OTP_KEY);
+    myHeaders.append("Content-Type", "application/json");
+
+    var raw = JSON.stringify({
+      requestId: verificationId,
+      otp: otps,
+    });
+
+    var requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
+
+    // fetch("https://www.getapistack.com/api/v1/otp/verify", requestOptions)
+    //   .then((response) => response.text())
+    //   .then((result) => console.log(result))
+    //   .catch((error) => console.log("error", error));
+
+    signInAnonymously(auth)
+      .then(() => {
+        console.log("here");
+        setcurrentStep("step3");
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+      });
+    setcurrentStep("step3");
+  };
   return (
     <>
       {currentStep !== "step3" && (
@@ -257,11 +325,6 @@ const CompleteProfileScreen = () => {
           )}
           {currentStep === "step2" && (
             <>
-              <FirebaseRecaptchaVerifierModal
-                ref={recaptchaVerifier}
-                firebaseConfig={app.options}
-                //attemptInvisibleVerification
-              />
               <View style={tw`flex items-start w-full ml-[15%]`}>
                 <Text style={styles.title}>Entrer votre code</Text>
                 <Text style={[tw`my-2`, styles.subSubtitle]}>
@@ -281,9 +344,9 @@ const CompleteProfileScreen = () => {
                 >
                   Modifier mon numéro
                 </Text>
-                <View style={[tw`flex-row w-full mt-4 justify-center`]}>
+                <View style={[tw`flex-row w-full px-10 mt-4  justify-evenly`]}>
                   <View
-                    style={tw`border rounded-lg mx-1 w-[12] h-[15] flex justify-center items-center `}
+                    style={tw`border border-[${border1}] rounded-lg mx-1 w-18 h-[13] flex justify-center items-center `}
                   >
                     <TextInput
                       ref={code1}
@@ -294,6 +357,8 @@ const CompleteProfileScreen = () => {
                       onSubmitEditing={() => {
                         code2.current.focus();
                       }}
+                      onFocus={() => setborder1("#FAC100")}
+                      onBlur={() => setborder1("#979797")}
                       blurOnSubmit={false}
                       textContentType="telephoneNumber"
                       onChangeText={(codeNumber) => {
@@ -308,7 +373,7 @@ const CompleteProfileScreen = () => {
                     />
                   </View>
                   <View
-                    style={tw`border rounded-lg mx-1 w-[12] h-[15] flex justify-center items-center `}
+                    style={tw`border border-[${border2}] rounded-lg mx-1 w-18  h-[13] flex justify-center items-center `}
                   >
                     <TextInput
                       ref={code2}
@@ -319,6 +384,8 @@ const CompleteProfileScreen = () => {
                       onSubmitEditing={() => {
                         code3.current.focus();
                       }}
+                      onFocus={() => setborder2("#FAC100")}
+                      onBlur={() => setborder2("#979797")}
                       blurOnSubmit={false}
                       focusable
                       textContentType="telephoneNumber"
@@ -334,7 +401,7 @@ const CompleteProfileScreen = () => {
                     />
                   </View>
                   <View
-                    style={tw`border rounded-lg mx-1 w-[12] h-[15] flex justify-center items-center `}
+                    style={tw`border border-[${border3}] rounded-lg mx-1 w-18   h-[13] flex justify-center items-center `}
                   >
                     <TextInput
                       ref={code3}
@@ -345,6 +412,8 @@ const CompleteProfileScreen = () => {
                       onSubmitEditing={() => {
                         code4.current.focus();
                       }}
+                      onFocus={() => setborder3("#FAC100")}
+                      onBlur={() => setborder3("#979797")}
                       blurOnSubmit={false}
                       focusable
                       textContentType="telephoneNumber"
@@ -360,7 +429,7 @@ const CompleteProfileScreen = () => {
                     />
                   </View>
                   <View
-                    style={tw`border rounded-lg mx-1 w-[12] h-[15] flex justify-center items-center `}
+                    style={tw`border border-[${border4}] rounded-lg mx-1 w-18 h-[13] flex justify-center items-center `}
                   >
                     <TextInput
                       ref={code4}
@@ -369,14 +438,16 @@ const CompleteProfileScreen = () => {
                       keyboardType="numeric"
                       returnKeyType="next"
                       onSubmitEditing={() => {
-                        code5.current.focus();
+                        code4.current.blur();
                       }}
+                      onFocus={() => setborder4("#FAC100")}
+                      onBlur={() => setborder4("#979797")}
                       blurOnSubmit={false}
                       focusable
                       textContentType="telephoneNumber"
                       onChangeText={(codeNumber) => {
                         if (codeNumber.length === 1) {
-                          code5.current.focus();
+                          code4.current.blur();
                           setcodeNumber4(codeNumber);
                         } else {
                           setcodeNumber4("");
@@ -385,7 +456,7 @@ const CompleteProfileScreen = () => {
                       maxLength={1}
                     />
                   </View>
-                  <View
+                  {/* <View
                     style={tw`border rounded-lg mx-1 w-[12] h-[15] flex justify-center items-center `}
                   >
                     <TextInput
@@ -436,7 +507,7 @@ const CompleteProfileScreen = () => {
                       }}
                       maxLength={1}
                     />
-                  </View>
+                  </View> */}
                 </View>
               </View>
               <View style={tw`absolute bottom-5`}>
@@ -461,38 +532,11 @@ const CompleteProfileScreen = () => {
                         codeNumber1.length === 1 &&
                         codeNumber2.length === 1 &&
                         codeNumber3.length === 1 &&
-                        codeNumber4.length === 1 &&
-                        codeNumber5.length === 1
+                        codeNumber4.length === 1
                       ) {
-                        const credential = PhoneAuthProvider.credential(
-                          verificationId,
-                          codeNumber1 +
-                            codeNumber2 +
-                            codeNumber3 +
-                            codeNumber4 +
-                            codeNumber5 +
-                            codeNumber6
+                        await handleVerifyOtp(
+                          codeNumber1 + codeNumber2 + codeNumber3 + codeNumber4
                         );
-                        await signInWithCredential(auth, credential);
-                        showMessage({
-                          text: "Phone authentication successful 👍",
-                        });
-
-                        //  const currentuser = await getDoc(
-                        //    doc(db, "users", auth.currentUser.uid)
-                        //  );
-                        setcurrentStep("step3");
-
-                        //  dispatch(setCurrentUser(currentuser.data()));
-                        //  navigation.navigate("HomeScreen");
-                        //  navigation.reset({
-                        //    index: 0,
-                        //    routes: [
-                        //      {
-                        //        name: "HomeScreen",
-                        //      },
-                        //    ],
-                        //  });
                       } else {
                         showMessage({
                           text: `Error: Pleas fill all the numbers`,
@@ -543,126 +587,151 @@ const CompleteProfileScreen = () => {
           <TouchableOpacity style={styles.flesh} onPress={handleReturn}>
             <AntDesign name="arrowleft" size={20} color={"#ffff"} />
           </TouchableOpacity>
-          <Text
-            style={{
-              width: "81%",
-              fontFamily: "Poppins-Regular",
-              fontSize: 15,
-              lineHeight: 30,
-            }}
-          >
-            Est-ce que vous étes :
-          </Text>
-          <View
-            key={"Radio buttons"}
-            style={tw`flex flex-row w-80 items-center justify-between pr-6 my-2`}
-          >
-            <RadioButtons
-              title="Propriétaire"
-              value="Propriétaire"
-              onSelect={setdriverType}
-              state={driverType}
-              disabled={false}
-            />
-            <RadioButtons
-              title="Chauffeur Taxi"
-              value="Chauffeur Taxi"
-              onSelect={setdriverType}
-              state={driverType}
-              disabled={false}
-            />
-          </View>
-          <Text
-            style={{
-              width: "81%",
-              fontFamily: "Poppins-Regular",
-              fontSize: 15,
-              lineHeight: 30,
-            }}
-          >
-            Numéro de l’autorisation :
-          </Text>
-          <TextInputs
-            onChangeText={setnumAutorisation}
-            placeHolder="Ex :  218 39 46 3 28"
-            value={numAutorisation}
-            key={"numAutorisation"}
-            style={tw`w-80 my-2 bg-[#F5F5F5]`}
-          />
-          <Text
-            style={{
-              width: "81%",
-              fontFamily: "Poppins-Regular",
-              fontSize: 15,
-              lineHeight: 30,
-            }}
-          >
-            Matricule de la voiture :
-          </Text>
-          <View
-            key={"matricule"}
-            style={tw`flex flex-row items-center justify-evenly my-2 `}
-          >
-            <TextInputs
-              onChangeText={setmatricule1}
-              placeHolder="Numéro"
-              value={matricule1}
-              key={"m1"}
-              style={tw`w-25 mr-2 bg-[#F5F5F5]`}
-            />
-            <Text
-              style={{
-                width: "10%",
-                fontFamily: "Poppins-SemiBold",
-                fontSize: 18,
-                lineHeight: 30,
-                paddingTop: 12,
-              }}
-            >
-              TUN
-            </Text>
-            <TextInputs
-              onChangeText={setmatricule2}
-              placeHolder="Série"
-              value={matricule2}
-              key={"m2"}
-              style={tw`w-40 ml-1 bg-[#F5F5F5]`}
-            />
-          </View>
-          <Text
-            style={{
-              width: "81%",
-              fontFamily: "Poppins-Regular",
-              fontSize: 15,
-              lineHeight: 30,
-            }}
-          >
-            Gouvernorat :
-          </Text>
+          {substep === "step1" && (
+            <>
+              <Text
+                style={{
+                  width: "81%",
+                  fontFamily: "Poppins-Regular",
+                  fontSize: 15,
+                  lineHeight: 30,
+                }}
+              >
+                Est-ce que vous étes :
+              </Text>
+              <View
+                key={"Radio buttons"}
+                style={tw`flex flex-row w-80 items-center justify-between pr-6 my-2`}
+              >
+                <RadioButtons
+                  title="Propriétaire"
+                  value="Propriétaire"
+                  onSelect={setdriverType}
+                  state={driverType}
+                  disabled={false}
+                />
+                <RadioButtons
+                  title="Chauffeur Taxi"
+                  value="Chauffeur Taxi"
+                  onSelect={setdriverType}
+                  state={driverType}
+                  disabled={false}
+                />
+              </View>
+              <Text
+                style={{
+                  width: "81%",
+                  fontFamily: "Poppins-Regular",
+                  fontSize: 15,
+                  lineHeight: 30,
+                }}
+              >
+                Numéro de l’autorisation :
+              </Text>
+              <TextInputs
+                onChangeText={setnumAutorisation}
+                placeHolder="Ex :  218 39 46 3 28"
+                value={numAutorisation}
+                key={"numAutorisation"}
+                style={tw`w-80 my-2 bg-[#F5F5F5]`}
+              />
+              <Text
+                style={{
+                  width: "81%",
+                  fontFamily: "Poppins-Regular",
+                  fontSize: 15,
+                  lineHeight: 30,
+                }}
+              >
+                Matricule de la voiture :
+              </Text>
+              <View
+                key={"matricule"}
+                style={tw`flex flex-row items-center justify-evenly my-2 `}
+              >
+                <TextInputs
+                  onChangeText={setmatricule1}
+                  placeHolder="Numéro"
+                  value={matricule1}
+                  key={"m1"}
+                  style={tw`w-25 mr-2 bg-[#F5F5F5]`}
+                />
+                <Text
+                  style={{
+                    width: "10%",
+                    fontFamily: "Poppins-SemiBold",
+                    fontSize: 18,
+                    lineHeight: 30,
+                    paddingTop: 12,
+                  }}
+                >
+                  TUN
+                </Text>
+                <TextInputs
+                  onChangeText={setmatricule2}
+                  placeHolder="Série"
+                  value={matricule2}
+                  key={"m2"}
+                  style={tw`w-40 ml-1 bg-[#F5F5F5]`}
+                />
+              </View>
+            </>
+          )}
+          {substep == "step2" && (
+            <>
+              <Text
+                style={{
+                  width: "81%",
+                  fontFamily: "Poppins-Regular",
+                  fontSize: 15,
+                  lineHeight: 30,
+                }}
+              >
+                Type de la voiture*
+              </Text>
+              <TextInputs
+                onChangeText={setcarType}
+                placeHolder="Toyota Yaris"
+                value={carType}
+                key={"numAutorisation"}
+                style={tw`w-80 my-2 bg-[#F5F5F5]`}
+              />
+              <Text
+                style={{
+                  width: "81%",
+                  fontFamily: "Poppins-Regular",
+                  fontSize: 15,
+                  lineHeight: 30,
+                }}
+              >
+                Gouvernorat :
+              </Text>
 
-          <PickerList
-            key={"gouv"}
-            selectedValue={selectedGov}
-            setSelectedLanguage={setselectedGov}
-            items={gouvernorats}
-          />
-          <Text
-            style={{
-              width: "81%",
-              fontFamily: "Poppins-Regular",
-              fontSize: 15,
-              lineHeight: 30,
-            }}
-          >
-            Ville d’activité :
-          </Text>
+              <PickerList
+                key={"gouv"}
+                selectedValue={selectedGov}
+                setSelectedLanguage={setselectedGov}
+                items={gouvernorats}
+              />
+              <Text
+                style={{
+                  width: "81%",
+                  fontFamily: "Poppins-Regular",
+                  fontSize: 15,
+                  lineHeight: 30,
+                }}
+              >
+                Ville d’activité :
+              </Text>
 
-          <PickerList
-            key={"ville"}
-            selectedValue={selectedVille}
-            setSelectedLanguage={setselectedVille}
-            items={ville}
-          />
+              <PickerList
+                key={"ville"}
+                selectedValue={selectedVille}
+                setSelectedLanguage={setselectedVille}
+                items={ville}
+              />
+            </>
+          )}
           <NextBtn text={"Continuer"} onClick={handleSave} />
         </View>
       )}

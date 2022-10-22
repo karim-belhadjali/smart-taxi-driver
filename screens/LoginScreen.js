@@ -70,7 +70,7 @@ const LoginScreen = () => {
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => navigation.navigate("RegisterScreen")}
+          onPress={() => navigation.navigate("WaitingScreen")}
           style={[tw`mt-5`, styles.button]}
         >
           <Text style={styles.buttonText}>Register</Text>
