@@ -1,12 +1,25 @@
-import { StyleSheet, Text, View, FlatList } from "react-native";
 import React, { useState, useEffect } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
 import tw from "twrnc";
 import { StatusBar } from "react-native";
 import AntDesign from "react-native-vector-icons/AntDesign";
-import { selectCurrentLocation } from "../app/slices/navigationSlice";
+import {
+  selectCurrentLocation,
+  selectCurrentUser,
+  setDestination,
+  setOrigin,
+  setRide,
+} from "../app/slices/navigationSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigation } from "@react-navigation/core";
 
-import { TouchableOpacity } from "react-native";
 import BlueDotSvg from "../assets/svg/BlueDotSvg";
 import {
   doc,
@@ -21,110 +34,185 @@ import {
 import { functions, httpsCallable, db } from "../firebase";
 import { LogBox } from "react-native";
 import { setOccupied } from "../app/slices/navigationSlice";
+import Entypo from "react-native-vector-icons/Entypo";
+
+import ToggleSwitch from "toggle-switch-react-native";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
 
 const RequestsScreen = () => {
   LogBox.ignoreLogs(["Setting a timer"]);
   const [requests, setrequests] = useState([]);
-  const [occupied, setoccupied] = useState();
-  const [currentRequest, setcurrentRide] = useState();
+  const [occupied, setoccupied] = useState(false);
+  const [currentRide, setcurrentRide] = useState();
   const [currentTimeRideInfo, setcurrentTimeRideInfo] = useState(null);
+  const [accepted, setaccepted] = useState(false);
   const currentLocation = useSelector(selectCurrentLocation);
+  const user = useSelector(selectCurrentUser);
+  const [online, setonline] = useState(true);
+  let interval;
+
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
 
   const handleListener = async () => {
     if (occupied) return;
     setrequests([]);
-    setcurrentRide([]);
     const q = query(collection(db, "Ride Requests"));
     const unsub = onSnapshot(q, async (querySnapshot) => {
       for (let index = 0; index < querySnapshot?.docs?.length; index++) {
         const docu = querySnapshot.docs[index].data();
+
         if (docu.driverAccepted === false) {
           setrequests((prevState) => [...prevState, docu]);
         }
+        unsub();
       }
       unsub();
     });
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      handleListener();
-    }, 20000);
-    return () => clearInterval(interval);
+    setoccupied(false);
+    setonline(true);
   }, []);
+
   useEffect(() => {
-    // console.log(requests[0]?.origin.description);
-  }, [requests]);
+    if (occupied === false && online === true) {
+      interval = setInterval(() => {
+        handleListener();
+      }, 15000);
+      return () => clearInterval(interval);
+    } else if (occupied === true) {
+      if (interval) {
+        clearInterval(interval);
+      }
+    } else if (online === false) {
+      setrequests([]);
+    }
+  }, [occupied, online]);
+
+  useEffect(() => {
+    if (!accepted) return;
+    const unsub = onSnapshot(
+      doc(db, "Ride Requests", "lG11deUf7GXjtd98WOeoAscHyB22"),
+      async (current) => {
+        if (current.exists()) {
+          const request = current.data();
+          if (request.clientAccepted) {
+            dispatch(setOrigin(request.origin));
+            dispatch(setDestination(request.destination));
+            const docRef = doc(
+              db,
+              "Current Courses",
+              "lG11deUf7GXjtd98WOeoAscHyB22"
+            );
+            setTimeout(async () => {
+              const docSnap = await getDoc(docRef);
+              dispatch(setRide(docSnap.data()));
+              console.log(docSnap.data());
+              navigation.navigate("RideScreen");
+              navigation.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: "RideScreen",
+                  },
+                ],
+              });
+              unsub();
+            }, 5000);
+          } else if (request.canceled) {
+            dispatch(setRide(null));
+            setcurrentTimeRideInfo(null);
+            setcurrentRide(null);
+            setoccupied(false);
+            setaccepted(false);
+          }
+        } else {
+          unsub();
+        }
+      }
+    );
+    return () => unsub();
+  }, [accepted]);
 
   const handleAccept = async (request) => {
-    setOccupied(true);
+    console.log("here");
+    setoccupied(true);
     const docref = doc(db, "Ride Requests", "lG11deUf7GXjtd98WOeoAscHyB22");
-
     const distanceInfo = await getTravelTime(
       currentLocation.location.lat,
       currentLocation.location.lng,
       request.origin.location.lat,
       request.origin.location.lng
     );
+
     if (distanceInfo?.status === "NOT_FOUND") {
       handleAnnuler(request);
       console.log("Document updated!");
       return;
     }
-    console.log(distanceInfo);
-    if (parseFloat(distanceInfo.distance.text) > 5) {
-      setTimeout(async () => {
-        try {
-          await runTransaction(db, async (transaction) => {
-            const sfDoc = await transaction.get(docref);
-            if (!sfDoc.exists()) {
-              console.log("Document does not exist!");
-              setOccupied(false);
-              return;
-            } else if (sfDoc.data().driverAccepted === true) {
-              console.log("Document already accepted!");
-              setOccupied(false);
-              return;
-            } else {
-              transaction.update(docref, {
-                driverAccepted: true,
-              });
-              handleAnnuler(request);
-              console.log("Document updated!");
-            }
-          });
-        } catch (e) {
-          console.log("Transaction failed: ", e);
-        }
-      }, 1000);
+
+    if (parseFloat(distanceInfo?.distance?.text) > 5) {
+      //setTimeout(handleChangeRequestValue(docref, request, distanceInfo), 1000);
+      handleChangeRequestValue(docref, request, distanceInfo);
     } else {
-      try {
-        await runTransaction(db, async (transaction) => {
-          const sfDoc = await transaction.get(docref);
-          if (!sfDoc.exists()) {
-            console.log("Document does not exist!");
-            setOccupied(false);
-            return;
-          } else if (sfDoc.data().driverAccepted === true) {
-            console.log("Document already accepted!");
-            setOccupied(false);
-            return;
-          } else {
-            transaction.update(docref, {
-              driverAccepted: true,
-            });
-            handleAnnuler(request);
-            console.log("Document updated!");
-          }
-        });
-      } catch (e) {
-        console.log("Transaction failed: ", e);
-      }
+      handleChangeRequestValue(docref, request, distanceInfo);
     }
   };
 
+  const handleChangeRequestValue = async (docref, request, distanceInfo) => {
+    try {
+      await runTransaction(db, async (transaction) => {
+        const sfDoc = await transaction.get(docref);
+        if (!sfDoc.exists()) {
+          console.log("Document does not exist!");
+          setoccupied(false);
+          return;
+        } else if (sfDoc.data().driverAccepted === true) {
+          console.log("Document already accepted!");
+          setOccupied(false);
+          return;
+        } else {
+          if (distanceInfo?.status !== "ZERO_RESULTS") {
+            transaction.update(docref, {
+              driverAccepted: true,
+              driverTime: distanceInfo?.duration?.text,
+              driverDistance: parseFloat(distanceInfo?.distance?.text),
+              driverInfo: {
+                carType: user?.carType,
+                location: currentLocation,
+                name: user?.fullName,
+                phone: user?.mainPhone,
+              },
+            });
+          } else {
+            transaction.update(docref, {
+              driverAccepted: true,
+              driverTime: "3",
+              driverDistance: 1,
+              driverInfo: {
+                carType: user?.carType,
+                location: currentLocation,
+                name: user?.fullName,
+                phone: user?.mainPhone,
+              },
+            });
+          }
+
+          setcurrentRide(request);
+          handleAnnuler(request);
+          setaccepted(true);
+          console.log("Document updated!");
+        }
+      });
+    } catch (e) {
+      console.log("Transaction failed: ", e);
+      setoccupied(false);
+      setaccepted(false);
+    }
+  };
   const handleAnnuler = (request) => {
     let newRequests = requests.filter((item) => item.phone !== request.phone);
     setrequests(newRequests);
@@ -149,10 +237,30 @@ const RequestsScreen = () => {
 
   return (
     <View
-      style={tw`h-screen w-screen px-5 flex items-center pt-[${
-        StatusBar.currentHeight + 30
-      }]`}
+      style={tw`h-screen w-screen px-5 flex items-center pt-[${StatusBar.currentHeight}]`}
     >
+      <View style={tw`w-full flex flex-row justify-between items-center  my-5`}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("MainDrawer")}
+          style={tw`bg-gray-50 p-3 mt-1 w-12 h-12 rounded-full shadow-lg mr-3`}
+        >
+          <Entypo name="menu" size={25} color="#171717" />
+        </TouchableOpacity>
+
+        <ToggleSwitch
+          isOn={online}
+          onColor="#66CFC7"
+          offColor="#979797"
+          label="En ligne"
+          labelStyle={{
+            color: "black",
+            fontWeight: "900",
+            fontFamily: "Poppins-Regular",
+          }}
+          size="small"
+          onToggle={(isOn) => setonline(!online)}
+        />
+      </View>
       <View style={tw`w-full flex-row justify-start items-center`}>
         <View
           style={tw`rounded-full bg-[#979797] w-15 h-15 flex justify-center items-center`}
@@ -161,7 +269,7 @@ const RequestsScreen = () => {
         </View>
         <View style={tw`w-full  justify-center items-start ml-5`}>
           <Text style={{ fontFamily: "Poppins-SemiBold", color: "#979797" }}>
-            Aslema, Prénom!
+            Aslema, {user?.fullName}!
           </Text>
           <Text style={{ fontFamily: "Poppins-SemiBold", color: "#979797" }}>
             <Text style={{ color: "#000000" }}>Beem</Text> vous souhaite
@@ -254,6 +362,21 @@ const RequestsScreen = () => {
           </Text>
         </View>
       )}
+      {accepted && (
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: "#000000",
+              justifyContent: "center",
+              opacity: 0.8,
+            },
+            tw`h-screen top-[5.7]] flex justify-center items-center`,
+          ]}
+        >
+          <ActivityIndicator size={80} color="#F74C00" />
+        </View>
+      )}
     </View>
   );
 };
@@ -274,21 +397,3 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 });
-
-const items = [
-  {
-    place: "ezzahra",
-  },
-  {
-    place: "Rades ezzahar",
-  },
-  {
-    place: "Menzah 5",
-  },
-  {
-    place: "sidi bou said,Tunis",
-  },
-  {
-    place: "Hamma ghrab",
-  },
-];

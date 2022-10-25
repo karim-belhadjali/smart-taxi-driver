@@ -8,6 +8,10 @@ import HomeScreen from "../screens/HomeScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import WaitingScreen from "../screens/WaitingScreen";
 import RequestsScreen from "../screens/RequestsScreen";
+import RideScreen from "../screens/RideScreen";
+import MainDrawer from "./MainDrawer";
+import AboutScreen from "../screens/AboutScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -62,6 +66,34 @@ const Navigations = () => {
         options={{
           headerShown: false,
         }}
+      />
+      <Stack.Screen
+        name="RideScreen"
+        component={RideScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="MainDrawer"
+        component={MainDrawer}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="AboutScreen"
+        component={AboutScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        // options={{
+        //   headerShown: true,
+        // }}
       />
     </Stack.Navigator>
   );

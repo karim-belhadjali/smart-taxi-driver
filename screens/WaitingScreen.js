@@ -1,16 +1,17 @@
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import AntDesign from "react-native-vector-icons/AntDesign";
 import FinalCarSvg from "../assets/svg/FinalCarSvg";
 import tw from "twrnc";
 
-import { useDispatch } from "react-redux";
-import { setResting } from "../app/slices/navigationSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { selectCurrentUser, setResting } from "../app/slices/navigationSlice";
 import { useNavigation } from "@react-navigation/core";
+import WaitingCar from "../assets/svg/WaitingCar";
 
 const WaitingScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const currentDrive = useSelector(selectCurrentUser);
 
   useEffect(() => {
     dispatch(setResting(true));
@@ -22,26 +23,21 @@ const WaitingScreen = () => {
     >
       <View style={[tw`rounded-full`, styles.ellipse1]} />
       <View style={[tw`rounded-full`, styles.ellipse2]} />
+
+      <WaitingCar />
       <TouchableOpacity
-        style={styles.flesh}
+        style={tw`rounded-full bg-[#431879] w-[80] border-[#431879] border-2 p-4 flex justify-center items-center mt-30`}
         onPress={() => {
-          navigation.navigate("LoginScreen");
+          navigation.navigate("RequestsScreen");
           navigation.reset({
             index: 0,
             routes: [
               {
-                name: "LoginScreen",
+                name: "RequestsScreen",
               },
             ],
           });
         }}
-      >
-        <AntDesign name="arrowleft" size={20} color={"#ffff"} />
-      </TouchableOpacity>
-      <FinalCarSvg />
-      <TouchableOpacity
-        style={tw`rounded-full bg-[#431879] w-[80] border-[#431879] border-2 p-4 flex justify-center items-center mt-30`}
-        onPress={() => navigation.navigate("RequestsScreen")}
       >
         <Text style={styles.btn}>Commencer</Text>
       </TouchableOpacity>

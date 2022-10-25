@@ -116,6 +116,7 @@ const CompleteProfileScreen = () => {
       fullName.length > 6 &&
       mainPhoneNumber.length > 6
     ) {
+      handleSendOtp();
       setcurrentStep("step2");
     } else if (isValidEmail(email)) {
       setshowerror({ text: "Please enter a valid email" });
@@ -155,23 +156,26 @@ const CompleteProfileScreen = () => {
                   email,
                   mainPhone: mainPhoneNumber,
                   secondPhone: secondayPhoneNumber,
-                  staut: driverType,
+                  status: driverType,
                   autorisationNumber: numAutorisation,
                   gouvernorat: selectedGov,
                   ville: selectedVille,
                   matricule: `${matricule1}-TU-${matricule2}`,
                   carType,
                 };
+
+                dispatch(
+                  setCurrentUser({
+                    currentDriver,
+                  })
+                );
                 setDoc(doc(db, "drivers", numAutorisation), currentDriver).then(
                   () => {
                     dispatch(setCurrentUser(currentDriver));
                     navigation.navigate("WaitingScreen");
                     navigation.reset({
-                      index: 1,
+                      index: 0,
                       routes: [
-                        {
-                          name: "LoginScreen",
-                        },
                         {
                           name: "WaitingScreen",
                         },
@@ -210,7 +214,7 @@ const CompleteProfileScreen = () => {
     var raw = JSON.stringify({
       messageFormat:
         "Hello, this is your OTP ${otp}. Please do not share it with anyone",
-      phoneNumber: "+21653081882",
+      phoneNumber: `+216${mainPhoneNumber}`,
       otpLength: 4,
       otpValidityInSeconds: 120,
     });
@@ -247,20 +251,22 @@ const CompleteProfileScreen = () => {
       redirect: "follow",
     };
 
-    // fetch("https://www.getapistack.com/api/v1/otp/verify", requestOptions)
-    //   .then((response) => response.text())
-    //   .then((result) => console.log(result))
-    //   .catch((error) => console.log("error", error));
-
-    signInAnonymously(auth)
-      .then(() => {
-        console.log("here");
-        setcurrentStep("step3");
+    fetch("https://www.getapistack.com/api/v1/otp/verify", requestOptions)
+      .then((response) => response.text())
+      .then((result) => {
+        console.log(result);
+        signInAnonymously(auth)
+          .then(() => {
+            console.log("here");
+            setcurrentStep("step3");
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+          });
       })
-      .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-      });
+      .catch((error) => console.log("error", error));
+
     setcurrentStep("step3");
   };
   return (
@@ -344,7 +350,7 @@ const CompleteProfileScreen = () => {
                 >
                   Modifier mon numéro
                 </Text>
-                <View style={[tw`flex-row w-full px-10 mt-4  justify-evenly`]}>
+                <View style={[tw`flex-row w-full px-3 mt-4  justify-evenly`]}>
                   <View
                     style={tw`border border-[${border1}] rounded-lg mx-1 w-18 h-[13] flex justify-center items-center `}
                   >
@@ -665,7 +671,7 @@ const CompleteProfileScreen = () => {
                     paddingTop: 12,
                   }}
                 >
-                  TUN
+                  TU
                 </Text>
                 <TextInputs
                   onChangeText={setmatricule2}

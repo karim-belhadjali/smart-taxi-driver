@@ -19,6 +19,7 @@ import { GOOGLE_MAPS_API_KEY } from "@env";
 import {
   selectCurrentLocation,
   setCurrentLocation,
+  setCurrentUser,
 } from "../app/slices/navigationSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
@@ -26,6 +27,8 @@ import tw from "twrnc";
 import { useFonts } from "expo-font";
 import LogoSvg from "../assets/svg/LogoSvg";
 import Loader from "react-native-three-dots";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function App() {
   const navigation = useNavigation();
@@ -69,15 +72,7 @@ export default function App() {
               })
             );
             setErrorMsg(null);
-            navigation.navigate("LoginScreen");
-            navigation.reset({
-              index: 0,
-              routes: [
-                {
-                  name: "LoginScreen",
-                },
-              ],
-            });
+            await getUser("Driver");
           })
           .catch((e) => {
             setErrorMsg(e.message);
@@ -87,6 +82,38 @@ export default function App() {
       }
     })();
   }, [reload]);
+
+  const getUser = async (key) => {
+    try {
+      const value = await AsyncStorage.getItem(key);
+      if (value !== null) {
+        let driver = JSON.parse(value);
+        dispatch(setCurrentUser(driver));
+        navigation.navigate("WaitingScreen");
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "WaitingScreen",
+            },
+          ],
+        });
+      } else {
+        navigation.navigate("LoginScreen");
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "LoginScreen",
+            },
+          ],
+        });
+      }
+    } catch (e) {
+      // error reading value
+      console.log(e.message);
+    }
+  };
 
   const handleTryAgain = () => {
     setreload(!reload);
