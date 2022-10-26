@@ -46,6 +46,7 @@ const RequestsScreen = () => {
   const [occupied, setoccupied] = useState(false);
   const [currentRide, setcurrentRide] = useState();
   const [currentTimeRideInfo, setcurrentTimeRideInfo] = useState(null);
+  const [currentRideRequest, setcurrentRideRequest] = useState();
   const [accepted, setaccepted] = useState(false);
   const currentLocation = useSelector(selectCurrentLocation);
   const user = useSelector(selectCurrentUser);
@@ -81,7 +82,7 @@ const RequestsScreen = () => {
     if (occupied === false && online === true) {
       interval = setInterval(() => {
         handleListener();
-      }, 15000);
+      }, 3000);
       return () => clearInterval(interval);
     } else if (occupied === true) {
       if (interval) {
@@ -95,7 +96,7 @@ const RequestsScreen = () => {
   useEffect(() => {
     if (!accepted) return;
     const unsub = onSnapshot(
-      doc(db, "Ride Requests", "lG11deUf7GXjtd98WOeoAscHyB22"),
+      doc(db, "Ride Requests", currentRideRequest?.user.phone),
       async (current) => {
         if (current.exists()) {
           const request = current.data();
@@ -105,7 +106,7 @@ const RequestsScreen = () => {
             const docRef = doc(
               db,
               "Current Courses",
-              "lG11deUf7GXjtd98WOeoAscHyB22"
+              currentRideRequest?.user.phone
             );
             setTimeout(async () => {
               const docSnap = await getDoc(docRef);
@@ -123,6 +124,7 @@ const RequestsScreen = () => {
               unsub();
             }, 5000);
           } else if (request.canceled) {
+            deleteDoc(doc(db, "Ride Requests", request?.user.phone));
             dispatch(setRide(null));
             setcurrentTimeRideInfo(null);
             setcurrentRide(null);
@@ -139,8 +141,9 @@ const RequestsScreen = () => {
 
   const handleAccept = async (request) => {
     console.log("here");
+    setcurrentRideRequest(request);
     setoccupied(true);
-    const docref = doc(db, "Ride Requests", "lG11deUf7GXjtd98WOeoAscHyB22");
+    const docref = doc(db, "Ride Requests", request?.user.phone);
     const distanceInfo = await getTravelTime(
       currentLocation.location.lat,
       currentLocation.location.lng,
@@ -155,8 +158,9 @@ const RequestsScreen = () => {
     }
 
     if (parseFloat(distanceInfo?.distance?.text) > 5) {
-      //setTimeout(handleChangeRequestValue(docref, request, distanceInfo), 1000);
-      handleChangeRequestValue(docref, request, distanceInfo);
+      setTimeout(() => {
+        handleChangeRequestValue(docref, request, distanceInfo);
+      }, 2000);
     } else {
       handleChangeRequestValue(docref, request, distanceInfo);
     }
@@ -239,28 +243,35 @@ const RequestsScreen = () => {
     <View
       style={tw`h-screen w-screen px-5 flex items-center pt-[${StatusBar.currentHeight}]`}
     >
-      <View style={tw`w-full flex flex-row justify-between items-center  my-5`}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("MainDrawer")}
-          style={tw`bg-gray-50 p-3 mt-1 w-12 h-12 rounded-full shadow-lg mr-3`}
+      {!accepted && (
+        <View
+          style={tw`w-full flex flex-row justify-between items-center  my-5`}
         >
-          <Entypo name="menu" size={25} color="#171717" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("MainDrawer")}
+            style={[
+              tw`bg-gray-50 p-3 mt-1 w-12 h-12 rounded-full  mr-3`,
+              { elevation: 50 },
+            ]}
+          >
+            <Entypo name="menu" size={25} color="#171717" />
+          </TouchableOpacity>
 
-        <ToggleSwitch
-          isOn={online}
-          onColor="#66CFC7"
-          offColor="#979797"
-          label="En ligne"
-          labelStyle={{
-            color: "black",
-            fontWeight: "900",
-            fontFamily: "Poppins-Regular",
-          }}
-          size="small"
-          onToggle={(isOn) => setonline(!online)}
-        />
-      </View>
+          <ToggleSwitch
+            isOn={online}
+            onColor="#66CFC7"
+            offColor="#979797"
+            label="En ligne"
+            labelStyle={{
+              color: "black",
+              fontWeight: "900",
+              fontFamily: "Poppins-Regular",
+            }}
+            size="small"
+            onToggle={(isOn) => setonline(!online)}
+          />
+        </View>
+      )}
       <View style={tw`w-full flex-row justify-start items-center`}>
         <View
           style={tw`rounded-full bg-[#979797] w-15 h-15 flex justify-center items-center`}

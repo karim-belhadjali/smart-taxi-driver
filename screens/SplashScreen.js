@@ -29,6 +29,7 @@ import LogoSvg from "../assets/svg/LogoSvg";
 import Loader from "react-native-three-dots";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Alert } from "react-native";
 
 export default function App() {
   const navigation = useNavigation();
@@ -53,7 +54,18 @@ export default function App() {
       if (isConnected && isInternetReachable) {
         let { status } = await Location.requestBackgroundPermissionsAsync();
         if (status !== "granted") {
-          setErrorMsg("Permission to access location was denied");
+          Alert.alert(
+            "Autorisation de localisation",
+            "Cette application doit avoir accès à votre emplacement pour fonctionner, si le problème persiste, autorisez-le manuellement dans les paramètres",
+            [
+              {
+                text: "Réessayer",
+                onPress: () => {
+                  setreload(!reload);
+                },
+              },
+            ]
+          );
           return;
         }
 
@@ -79,6 +91,18 @@ export default function App() {
           });
       } else {
         setErrorMsg("No Internet Connection is detected please try again");
+        Alert.alert(
+          "Connexion Internet non détectée",
+          "Aucune connexion Internet n'est détectée, veuillez réessayer",
+          [
+            {
+              text: "Réessayer",
+              onPress: () => {
+                setreload(!reload);
+              },
+            },
+          ]
+        );
       }
     })();
   }, [reload]);

@@ -61,7 +61,7 @@ const RideScreen = () => {
         })
       );
       setDoc(
-        doc(db, "Current Courses", "lG11deUf7GXjtd98WOeoAscHyB22"),
+        doc(db, "Current Courses", currentRide?.user.phone),
         {
           driverInfo: {
             location: {
@@ -155,19 +155,23 @@ const RideScreen = () => {
 
   const handleStartRide = () => {
     setDoc(
-      doc(db, "Current Courses", "lG11deUf7GXjtd98WOeoAscHyB22"),
+      doc(db, "Current Courses", currentRide?.user.phone),
       { driverArrived: true },
       {
         merge: true,
       }
     ).then(() => {
       dispatch(setOrigin(null));
+      mapRef?.current?.fitToSuppliedMarkers(["Client", "current"], {
+        edgePadding: { top: 150, right: 100, bottom: 50, left: 100 },
+        duration: 1000,
+      });
       setcurrentStep("Ongoing");
     });
   };
   const handleFinish = () => {
     setDoc(
-      doc(db, "Current Courses", "lG11deUf7GXjtd98WOeoAscHyB22"),
+      doc(db, "Current Courses", currentRide?.user.phone),
       { finished: true },
       {
         merge: true,
@@ -177,7 +181,9 @@ const RideScreen = () => {
         doc(
           db,
           "Finished Rides",
-          `${user.currentDriver?.uid}_${Date.now}_${currentRide?.user?.phone}`
+          `${currentRide?.driverInfo?.phone}_${Date.now()}_${
+            currentRide?.user?.phone
+          }`
         ),
         { finishedTime: Date.now(), currentRide }
       ).then(() => {
@@ -190,6 +196,8 @@ const RideScreen = () => {
 
   const handleReturnHome = () => {
     dispatch(setRide(null));
+    deleteDoc(doc(db, "Ride Requests", currentRide?.user.phone));
+    deleteDoc(doc(db, "Current Courses", currentRide?.user.phone));
     navigation.navigate("RequestsScreen");
     navigation.reset({
       index: 0,

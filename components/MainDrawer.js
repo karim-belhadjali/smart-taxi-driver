@@ -16,7 +16,6 @@ import { useSelector } from "react-redux";
 const MainDrawer = () => {
   const navigation = useNavigation();
   const user = useSelector(selectCurrentUser);
-  console.log(user);
 
   return (
     <View
