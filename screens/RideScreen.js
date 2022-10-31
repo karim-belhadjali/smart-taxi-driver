@@ -39,6 +39,8 @@ import tw from "twrnc";
 import ToClient from "../components/Rides/ToClient";
 import FinishedPage from "../components/FinishedPage";
 import OngoingRide from "../components/Rides/OngoingRide";
+import MapCarSvg from "../assets/svg/MapCarSvg";
+import UserLocationSvg from "../assets/svg/UserLocationSvg";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
 const LOCATION_TASK_NAME = "background-location-task";
@@ -236,7 +238,9 @@ const RideScreen = () => {
               title="current"
               description={currentLocation.description}
               identifier="current"
-            />
+            >
+              <MapCarSvg />
+            </Marker>
             {origin && currentLocation && (
               <MapViewDirections
                 origin={`${currentLocation.location.lat},${currentLocation.location.lng}`}
@@ -258,7 +262,9 @@ const RideScreen = () => {
                 title="Client"
                 description={origin.description}
                 identifier="origin"
-              />
+              >
+                <UserLocationSvg />
+              </Marker>
             )}
             {destination && currentLocation && !origin && (
               <MapViewDirections
