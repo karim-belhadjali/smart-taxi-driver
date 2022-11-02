@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,10 +6,12 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  Animated,
 } from "react-native";
 import tw from "twrnc";
 import { StatusBar } from "react-native";
 import AntDesign from "react-native-vector-icons/AntDesign";
+import MenuItem from "../components/MenuItem";
 import {
   selectCurrentLocation,
   selectCurrentUser,
@@ -37,11 +39,14 @@ import { setOccupied } from "../app/slices/navigationSlice";
 import Entypo from "react-native-vector-icons/Entypo";
 
 import ToggleSwitch from "toggle-switch-react-native";
+import { Dimensions } from "react-native";
+import { Audio } from "expo-av";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
 
 const RequestsScreen = () => {
   LogBox.ignoreLogs(["Setting a timer"]);
+  let interval;
   const [requests, setrequests] = useState([]);
   const [occupied, setoccupied] = useState(false);
   const [currentRide, setcurrentRide] = useState();
@@ -51,7 +56,13 @@ const RequestsScreen = () => {
   const currentLocation = useSelector(selectCurrentLocation);
   const user = useSelector(selectCurrentUser);
   const [online, setonline] = useState(true);
-  let interval;
+  const [displayMenu, setdisplayMenu] = useState(false);
+
+  const [sound, setSound] = useState();
+
+  // Animations menu
+  const screenWidth = Dimensions.get("window").width;
+  const leftpos = useRef(new Animated.Value(-screenWidth)).current;
 
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -66,6 +77,7 @@ const RequestsScreen = () => {
 
         if (docu.driverAccepted === false) {
           setrequests((prevState) => [...prevState, docu]);
+          playSound();
         }
         unsub();
       }
@@ -82,7 +94,7 @@ const RequestsScreen = () => {
     if (occupied === false && online === true) {
       interval = setInterval(() => {
         handleListener();
-      }, 3000);
+      }, 10000);
       return () => clearInterval(interval);
     } else if (occupied === true) {
       if (interval) {
@@ -138,6 +150,14 @@ const RequestsScreen = () => {
     );
     return () => unsub();
   }, [accepted]);
+
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
 
   const handleAccept = async (request) => {
     console.log("here");
@@ -239,6 +259,34 @@ const RequestsScreen = () => {
     return data.rows[0].elements[0];
   };
 
+  //Animations functions
+
+  const handleOpenMenu = () => {
+    setdisplayMenu(true);
+    Animated.timing(leftpos, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  };
+  const handleCloseMenu = () => {
+    setdisplayMenu(false);
+
+    Animated.timing(leftpos, {
+      toValue: -screenWidth,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  async function playSound() {
+    const { sound } = await Audio.Sound.createAsync(
+      require("../assets/mixkit-positive-notification-951.wav")
+    );
+    setSound(sound);
+
+    await sound.playAsync();
+  }
   return (
     <>
       <View
@@ -249,10 +297,10 @@ const RequestsScreen = () => {
             style={tw`w-full flex flex-row justify-between items-center  my-5`}
           >
             <TouchableOpacity
-              onPress={() => navigation.navigate("MainDrawer")}
+              onPress={() => handleOpenMenu()}
               style={[
                 tw`bg-gray-50 p-3 mt-1 w-12 h-12 rounded-full  mr-3`,
-                { elevation: 50 },
+                // { elevation: 50 },
               ]}
             >
               <Entypo name="menu" size={25} color="#171717" />
@@ -394,6 +442,69 @@ const RequestsScreen = () => {
           <ActivityIndicator size={80} color="#F74C00" />
         </View>
       )}
+
+      <Animated.View
+        style={[
+          tw`flex flex-row w-screen h-screen android:mt-[${StatusBar.currentHeight}]`,
+          StyleSheet.absoluteFill,
+          { left: leftpos },
+        ]}
+      >
+        <View style={tw`bg-[#FFFFFF]  w-[75%] flex items-center`}>
+          <View style={tw`w-[90%] flex flex-row mt-5`}>
+            <View
+              style={tw`bg-[#431879] rounded-full w-12 h-12 flex justify-center items-center`}
+            >
+              <AntDesign style={tw``} name={"user"} size={25} color={"#ffff"} />
+            </View>
+            <Text
+              style={[
+                tw`mt-3 mx-3`,
+                { fontFamily: "Poppins-Bold", fontSize: 20 },
+              ]}
+              numberOfLines={1}
+            >
+              {user?.fullName}
+            </Text>
+          </View>
+          <View style={tw`bg-[#000000] opacity-10 h-[.45] w-full mt-5`} />
+          <View style={tw`mt-5 w-[90%]`}>
+            <MenuItem
+              iconName={"hearto"}
+              text="Profile"
+              onClick={() => navigation.navigate("Profile")}
+            />
+            <View style={tw`opacity-30`}>
+              <MenuItem
+                iconName={"clockcircleo"}
+                text="Historique"
+                onClick={() => console.log("disabled")}
+              />
+            </View>
+            <MenuItem
+              iconName={"infocirlceo"}
+              text="À propos"
+              onClick={() => {
+                navigation.navigate("À propos");
+              }}
+            />
+          </View>
+          <Text
+            style={[
+              tw`absolute bottom-2 left-10`,
+              { fontFamily: "Poppins-SemiBold", fontSize: 15, opacity: 0.5 },
+            ]}
+          >
+            Beem 2022 - Version 1.0
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={tw`bg-[#000000] opacity-50 w-[25%]`}
+          onPress={() => {
+            handleCloseMenu();
+          }}
+        />
+      </Animated.View>
     </>
   );
 };
