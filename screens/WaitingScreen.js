@@ -18,9 +18,7 @@ const WaitingScreen = () => {
   }, []);
 
   return (
-    <View
-      style={tw`w-screen h-screen flex pt-[120] justify-center items-center `}
-    >
+    <View style={tw`w-screen h-screen flex  justify-center items-center `}>
       <View style={[tw`rounded-full`, styles.ellipse1]} />
       <View style={[tw`rounded-full`, styles.ellipse2]} />
 

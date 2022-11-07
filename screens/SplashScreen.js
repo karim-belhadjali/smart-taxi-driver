@@ -52,7 +52,7 @@ export default function App() {
       let { isConnected, isInternetReachable } =
         await Network.getNetworkStateAsync();
       if (isConnected && isInternetReachable) {
-        let { status } = await Location.requestBackgroundPermissionsAsync();
+        let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           Alert.alert(
             "Autorisation de localisation",
@@ -139,9 +139,6 @@ export default function App() {
     }
   };
 
-  const handleTryAgain = () => {
-    setreload(!reload);
-  };
   return (
     <View style={stylesheet.styleRectangle1}>
       <View

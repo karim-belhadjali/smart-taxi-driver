@@ -16,6 +16,13 @@
     "preview3": {
       "developmentClient": true
     },
-    "production": {}
+    "production": {
+      "env": {
+        "ANDROID_SDK_ROOT": "C:/Users/karim/AppData/Local/Android/Sdk"
+      },
+      "android": {
+        "image": "latest"
+      }
+    }
   }
 }

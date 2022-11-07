@@ -63,6 +63,7 @@ const RequestsScreen = () => {
   // Animations menu
   const screenWidth = Dimensions.get("window").width;
   const leftpos = useRef(new Animated.Value(-screenWidth)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
   const dispatch = useDispatch();
   const navigation = useNavigation();
@@ -263,20 +264,33 @@ const RequestsScreen = () => {
 
   const handleOpenMenu = () => {
     setdisplayMenu(true);
+
     Animated.timing(leftpos, {
       toValue: 0,
-      duration: 500,
+      duration: 300,
       useNativeDriver: false,
-    }).start();
+    }).start(() => {
+      Animated.timing(opacity, {
+        toValue: 0.2,
+        duration: 100,
+        useNativeDriver: false,
+      }).start();
+    });
   };
   const handleCloseMenu = () => {
     setdisplayMenu(false);
 
-    Animated.timing(leftpos, {
-      toValue: -screenWidth,
-      duration: 500,
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 20,
       useNativeDriver: false,
-    }).start();
+    }).start(() => {
+      Animated.timing(leftpos, {
+        toValue: -screenWidth,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    });
   };
 
   async function playSound() {
@@ -290,7 +304,7 @@ const RequestsScreen = () => {
   return (
     <>
       <View
-        style={tw`h-screen w-screen px-5 flex items-center pt-[${StatusBar.currentHeight}]`}
+        style={tw`h-full w-screen px-5 flex items-center pt-[${StatusBar.currentHeight}] bg-[#ffff]`}
       >
         {!accepted && (
           <View
@@ -332,7 +346,8 @@ const RequestsScreen = () => {
               Aslema, {user?.fullName}!
             </Text>
             <Text style={{ fontFamily: "Poppins-SemiBold", color: "#979797" }}>
-              <Text style={{ color: "#000000" }}>Beem</Text> vous souhaite
+              <Text style={{ color: "#000000" }}>Beem</Text> vous souhaite la
+              bienvenue
             </Text>
           </View>
         </View>
@@ -498,12 +513,15 @@ const RequestsScreen = () => {
             Beem 2022 - Version 1.0
           </Text>
         </View>
-        <TouchableOpacity
-          style={tw`bg-[#000000] opacity-50 w-[25%]`}
-          onPress={() => {
-            handleCloseMenu();
-          }}
-        />
+        <Animated.View style={[tw`bg-[#000000] w-[25%]`, { opacity: opacity }]}>
+          <TouchableOpacity
+            activeOpacity={0}
+            style={[tw`bg-transparent w-full h-full`]}
+            onPress={() => {
+              handleCloseMenu();
+            }}
+          />
+        </Animated.View>
       </Animated.View>
     </>
   );

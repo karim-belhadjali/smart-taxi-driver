@@ -13,11 +13,7 @@ import StarSvg from "../assets/svg/StarSvg";
 
 const FinishedPage = ({ ride, OnFinish }) => {
   return (
-    <View
-      style={tw`flex justify-around items-center w-screen h-screen  pt-[${
-        StatusBar.currentHeight + 10
-      }]`}
-    >
+    <View style={tw`flex justify-around items-center w-screen h-screen`}>
       <View key={"road"} style={tw`flex  `}>
         <View style={tw`flex flex-row items-center justify-center  `}>
           <View style={tw` mr-5`}>
