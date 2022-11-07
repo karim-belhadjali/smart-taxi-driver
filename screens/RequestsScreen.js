@@ -304,7 +304,7 @@ const RequestsScreen = () => {
   return (
     <>
       <View
-        style={tw`h-full w-screen px-5 flex items-center pt-[${StatusBar.currentHeight}] bg-[#ffff]`}
+        style={tw`h-full w-screen px-5 flex items-center pt-[${StatusBar.currentHeight}] bg-[#FFFFFF]`}
       >
         {!accepted && (
           <View
