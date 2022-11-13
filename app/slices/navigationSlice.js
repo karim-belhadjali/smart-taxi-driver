@@ -10,6 +10,7 @@ const initialState = {
   occupied: false,
   resting: true,
   ride: null,
+  version: null,
 };
 
 export const navigationSlice = createSlice({
@@ -40,6 +41,9 @@ export const navigationSlice = createSlice({
     setRide: (state, action) => {
       state.ride = action.payload;
     },
+    setVersion: (state, action) => {
+      state.version = action.payload;
+    },
   },
 });
 
@@ -52,6 +56,7 @@ export const {
   setOccupied,
   setResting,
   setRide,
+  setVersion,
 } = navigationSlice.actions;
 
 export const selectOrigin = (state) => state.navigation.origin;
@@ -61,6 +66,8 @@ export const selectCurrentUser = (state) => state.navigation.currentUser;
 export const selectOccupied = (state) => state.navigation.occupied;
 export const selectResting = (state) => state.navigation.resting;
 export const selectRide = (state) => state.navigation.ride;
+export const selectVersion = (state) => state.navigation.version;
+
 export const selectCurrentLocation = (state) =>
   state.navigation.currentLocation;
 

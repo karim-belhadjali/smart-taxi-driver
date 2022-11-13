@@ -20,6 +20,7 @@ import {
   selectCurrentLocation,
   setCurrentLocation,
   setCurrentUser,
+  setVersion,
 } from "../app/slices/navigationSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
@@ -30,6 +31,9 @@ import Loader from "react-native-three-dots";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import AppLink from "react-native-app-link";
 
 export default function App() {
   const navigation = useNavigation();
@@ -37,6 +41,9 @@ export default function App() {
   const [reload, setreload] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const dispatch = useDispatch();
+
+  const version = "1.0.3";
+
   useFonts({
     "Poppins-Black": require("../assets/fonts/Poppins/Poppins-Black.ttf"),
     "Poppins-Italic": require("../assets/fonts/Poppins/Poppins-Italic.ttf"),
@@ -84,7 +91,7 @@ export default function App() {
               })
             );
             setErrorMsg(null);
-            await getUser("Driver");
+            await getVersion();
           })
           .catch((e) => {
             setErrorMsg(e.message);
@@ -136,6 +143,41 @@ export default function App() {
     } catch (e) {
       // error reading value
       console.log(e.message);
+    }
+  };
+
+  const getVersion = async () => {
+    const docRef = doc(db, "versions", "driver");
+    const docSnap = await getDoc(docRef);
+    if (docSnap?.exists()) {
+      if (docSnap.data().name === version) {
+        dispatch(setVersion(version));
+        await getUser("Driver");
+      } else {
+        Alert.alert(
+          "Nouvelle mise à jour détectée",
+          "Nouvelle mise à jour détectée, veuillez mettre à jour l'application vers la dernière version",
+          [
+            {
+              text: "Mettre à jour",
+              onPress: () => {
+                AppLink.openInStore({
+                  appName: "Smart Driver",
+                  playStoreId: "com.beem.smartdriver",
+                });
+              },
+            },
+            {
+              text: "Réessayer",
+              onPress: () => {
+                setreload(!reload);
+              },
+            },
+          ]
+        );
+      }
+    } else {
+      await getUser("Driver");
     }
   };
 

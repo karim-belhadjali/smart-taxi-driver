@@ -2,7 +2,7 @@
   "expo": {
     "name": "driver",
     "slug": "driver",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.karim.belhadjali.driver",
+      "package": "com.beem.smartdriver",
       "config": {
         "googleMaps": { "apiKey": "AIzaSyC68H_H39puGTSmrl2XNhS2d9I7YXIn3fo" }
       },

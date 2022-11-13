@@ -66,25 +66,17 @@ const LoginScreen = () => {
       if (docSnap?.exists()) {
         driver = docSnap.data();
         seterror(null);
-        signInAnonymously(auth)
-          .then(async () => {
-            await storeUser(driver);
-            dispatch(setCurrentUser(docSnap.data()));
-            navigation.navigate("WaitingScreen");
-            navigation.reset({
-              index: 0,
-              routes: [
-                {
-                  name: "WaitingScreen",
-                },
-              ],
-            });
-          })
-          .catch((error) => {
-            seterror({
-              text: "Impossible de se connecter assurez-vous que votre connexion Internet fonctionne, si le problème persiste contactez le support",
-            });
-          });
+        await storeUser(driver);
+        dispatch(setCurrentUser(docSnap.data()));
+        navigation.navigate("WaitingScreen");
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "WaitingScreen",
+            },
+          ],
+        });
       } else {
         seterror({
           text: "Ce numéro n'existe pas",

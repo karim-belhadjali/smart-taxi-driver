@@ -95,7 +95,7 @@ const RequestsScreen = () => {
     if (occupied === false && online === true) {
       interval = setInterval(() => {
         handleListener();
-      }, 10000);
+      }, 15000);
       return () => clearInterval(interval);
     } else if (occupied === true) {
       if (interval) {
@@ -239,7 +239,9 @@ const RequestsScreen = () => {
     }
   };
   const handleAnnuler = (request) => {
-    let newRequests = requests.filter((item) => item.phone !== request.phone);
+    let newRequests = requests.filter(
+      (item) => item.user.phone !== request.user.phone
+    );
     setrequests(newRequests);
   };
 
@@ -355,7 +357,7 @@ const RequestsScreen = () => {
           key={"separator"}
           style={tw`bg-[#000000] opacity-10 h-[.45] mt-5 w-90`}
         />
-        <View style={tw`flex justify-center items-start w-full ml-3 mt-5`}>
+        <View style={tw`flex justify-center items-start w-full ml-3 mt-3`}>
           <Text
             style={{
               fontFamily: "Poppins-Bold",
@@ -367,7 +369,7 @@ const RequestsScreen = () => {
           </Text>
         </View>
         {requests.length > 0 && (
-          <View style={tw`h-full w-full mt-5 flex items-center`}>
+          <View style={tw`h-72% w-screen mt-1 pb-10 flex items-center`}>
             <FlatList
               data={requests}
               ItemSeparatorComponent={() => (

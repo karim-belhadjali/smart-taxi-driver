@@ -2,7 +2,7 @@
   "name": "driver",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
@@ -17,6 +17,7 @@
     "@react-navigation/native-stack": "^6.9.0",
     "@reduxjs/toolkit": "^1.8.6",
     "expo": "~44.0.0",
+    "expo-av": "~10.2.0",
     "expo-background-fetch": "~10.1.0",
     "expo-build-properties": "^0.3.0",
     "expo-firebase-recaptcha": "~2.1.0",
@@ -33,6 +34,7 @@
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "react-native": "0.64.3",
+    "react-native-app-link": "^1.0.1",
     "react-native-dotenv": "^3.3.1",
     "react-native-elements": "^3.4.2",
     "react-native-maps": "0.29.4",
@@ -47,8 +49,7 @@
     "react-native-webview": "11.15.0",
     "react-redux": "^8.0.4",
     "toggle-switch-react-native": "^3.3.0",
-    "twrnc": "^3.4.0",
-    "expo-av": "~10.2.0"
+    "twrnc": "^3.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"
