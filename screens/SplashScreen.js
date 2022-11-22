@@ -17,7 +17,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { GOOGLE_MAPS_API_KEY } from "@env";
 
 import {
-  selectCurrentLocation,
   setCurrentLocation,
   setCurrentUser,
   setVersion,

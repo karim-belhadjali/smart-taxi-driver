@@ -82,10 +82,10 @@ const Navigations = () => {
         }}
       />
       <Stack.Screen
-        name="AboutScreen"
+        name="À propos"
         component={AboutScreen}
         options={{
-          headerShown: false,
+          headerShown: true,
         }}
       />
       <Stack.Screen

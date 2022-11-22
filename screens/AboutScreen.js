@@ -18,24 +18,19 @@ const AboutScreen = () => {
   const [currentScreen, setcurrentScreen] = useState("main");
   const handleReturn = () => {
     if (currentScreen === "main") {
-      navigation.navigate("MainDrawer");
+      navigation.navigate("RequestsScreen");
       navigation.reset({
         index: 0,
         routes: [
           {
-            name: "MainDrawer",
+            name: "RequestsScreen",
           },
         ],
       });
     }
   };
   return (
-    <View
-      style={tw`flex w-screen h-screen pt-[${StatusBar.currentHeight + 20}] `}
-    >
-      <TouchableOpacity style={[tw`ml-5`, styles.flesh]} onPress={handleReturn}>
-        <AntDesign name="arrowleft" size={20} color={"#4F4F4F"} />
-      </TouchableOpacity>
+    <View style={tw`flex w-screen h-screen bg-white`}>
       <View style={tw`flex items-start ml-5 mt-5`}>
         <Text style={[tw``, { fontFamily: "Poppins-Bold", fontSize: 20 }]}>
           À propos

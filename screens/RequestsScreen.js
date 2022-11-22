@@ -15,6 +15,7 @@ import MenuItem from "../components/MenuItem";
 import {
   selectCurrentLocation,
   selectCurrentUser,
+  selectVersion,
   setDestination,
   setOrigin,
   setRide,
@@ -55,6 +56,7 @@ const RequestsScreen = () => {
   const [accepted, setaccepted] = useState(false);
   const currentLocation = useSelector(selectCurrentLocation);
   const user = useSelector(selectCurrentUser);
+  const version = useSelector(selectVersion);
   const [online, setonline] = useState(true);
   const [displayMenu, setdisplayMenu] = useState(false);
 
@@ -143,6 +145,7 @@ const RequestsScreen = () => {
             setcurrentRide(null);
             setoccupied(false);
             setaccepted(false);
+            unsub();
           }
         } else {
           unsub();
@@ -161,7 +164,6 @@ const RequestsScreen = () => {
   }, [sound]);
 
   const handleAccept = async (request) => {
-    console.log("here");
     setcurrentRideRequest(request);
     setoccupied(true);
     const docref = doc(db, "Ride Requests", request?.user.phone);
@@ -192,7 +194,6 @@ const RequestsScreen = () => {
       await runTransaction(db, async (transaction) => {
         const sfDoc = await transaction.get(docref);
         if (!sfDoc.exists()) {
-          console.log("Document does not exist!");
           setoccupied(false);
           return;
         } else if (sfDoc.data().driverAccepted === true) {
@@ -512,7 +513,7 @@ const RequestsScreen = () => {
               { fontFamily: "Poppins-SemiBold", fontSize: 15, opacity: 0.5 },
             ]}
           >
-            Beem 2022 - Version 1.0
+            Beem 2022 - Version {version}
           </Text>
         </View>
         <Animated.View style={[tw`bg-[#000000] w-[25%]`, { opacity: opacity }]}>

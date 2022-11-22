@@ -13,11 +13,13 @@ import tw from "twrnc";
 
 import * as Location from "expo-location";
 import Navigations from "./components/Navigations";
+import { useKeepAwake } from "expo-keep-awake";
 
 export default function App() {
   useDeviceContext(tw);
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  useKeepAwake();
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();

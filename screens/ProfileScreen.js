@@ -45,15 +45,7 @@ const ProfileScreen = () => {
       </View>
       <View style={tw`bg-[#000000] opacity-10 h-[.45] w-full mt-5`} />
 
-      {user?.email && (
-        <View style={tw`flex flex-row w-[80%] mt-5 `}>
-          <Entypo name={"email"} size={25} color={"#455154"} />
-          <Text style={[tw`mt-[1] ml-5`, { fontFamily: "Poppins-SemiBold" }]}>
-            {user?.email}
-          </Text>
-        </View>
-      )}
-      {user?.mainPhone && (
+      {user?.mainPhone && user?.mainPhone !== "" && (
         <View style={tw`flex flex-row w-[80%] mt-5 `}>
           <AntDesign style={tw``} name={"phone"} size={25} color={"#455154"} />
           <View>
@@ -84,6 +76,15 @@ const ProfileScreen = () => {
 
           <Text style={[tw`mt-[1] ml-5`, { fontFamily: "Poppins-SemiBold" }]}>
             {user?.matricule}
+          </Text>
+        </View>
+      )}
+      {user?.carType && (
+        <View style={tw`flex flex-row w-[80%] mt-5 `}>
+          <AntDesign style={tw``} name={"car"} size={25} color={"#455154"} />
+
+          <Text style={[tw`mt-[1] ml-5`, { fontFamily: "Poppins-SemiBold" }]}>
+            {user?.carType}
           </Text>
         </View>
       )}

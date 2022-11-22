@@ -6,8 +6,17 @@ import EvilIcons from "react-native-vector-icons/EvilIcons";
 import { TouchableOpacity } from "react-native";
 import DestinationSvg from "../../assets/svg/destinationSvg";
 import * as Linking from "expo-linking";
+import { Dimensions } from "react-native";
+import { Alert } from "react-native";
 
-const ToClient = ({ price, origin, destination, phone, handleStart }) => {
+const ToClient = ({
+  price,
+  origin,
+  destination,
+  phone,
+  handleStart,
+  cancelRide,
+}) => {
   return (
     <View
       style={[
@@ -97,12 +106,40 @@ const ToClient = ({ price, origin, destination, phone, handleStart }) => {
         <Text style={styles.txt}>
           Veillez lancer la course dès l’arrivée au client !
         </Text>
-        <TouchableOpacity
-          style={tw` rounded-full  w-[80] bg-[#431879] h-12   flex justify-center items-center`}
-          onPress={handleStart}
+        <View
+          style={tw`flex flex-row items-center justify-between w-full mt-2 px-2`}
         >
-          <Text style={styles.btnC}>Commencer la course</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={tw` rounded-full  w-40% bg-white h-11 border border-[#F74C00]   flex justify-center items-center`}
+            onPress={() => {
+              Alert.alert(
+                "Annuler la course",
+                "voulez-vous annuler la course?",
+                [
+                  {
+                    text: "retour",
+                    onPress: () => {},
+                  },
+                  {
+                    text: "Annuler la course",
+                    onPress: () => {
+                      cancelRide();
+                    },
+                    style: "cancel",
+                  },
+                ]
+              );
+            }}
+          >
+            <Text style={styles.btnA}>Annuler</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={tw` rounded-full  w-55% bg-[#431879] h-12   flex justify-center items-center`}
+            onPress={handleStart}
+          >
+            <Text style={styles.btnC}>Commencer la course</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -126,7 +163,12 @@ const styles = StyleSheet.create({
   },
   btnC: {
     fontFamily: "Poppins-SemiBold",
-    fontSize: 16,
+    fontSize: Dimensions.get("window").width * 0.035,
     color: "#fff",
+  },
+  btnA: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+    color: "#F74C00",
   },
 });
