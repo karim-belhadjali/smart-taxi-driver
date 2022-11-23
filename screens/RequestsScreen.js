@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Animated,
+  AppState,
 } from "react-native";
 import tw from "twrnc";
 import { StatusBar } from "react-native";
@@ -33,6 +34,7 @@ import {
   runTransaction,
   deleteDoc,
   getDoc,
+  getDocs,
 } from "firebase/firestore";
 import { functions, httpsCallable, db } from "../firebase";
 import { LogBox } from "react-native";
@@ -44,8 +46,60 @@ import { Dimensions } from "react-native";
 import { Audio } from "expo-av";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
+import { schedulePushNotification } from "../notifications";
+import * as BackgroundFetch from "expo-background-fetch";
+import * as TaskManager from "expo-task-manager";
+
+const BACKGROUND_FETCH_TASK = "background-fetch";
 
 const RequestsScreen = () => {
+  const [notif, setnotif] = useState([]);
+
+  TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+    const q = await getDocs(collection(db, "Ride Requests"));
+    console.log("here");
+    if (q.docs.length >= 1) {
+      schedulePushNotification();
+    }
+
+    return BackgroundFetch.BackgroundFetchResult.NewData;
+  });
+
+  async function registerBackgroundFetchAsync() {
+    return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+      minimumInterval: 5,
+      stopOnTerminate: false, // android only,
+      startOnBoot: true, // android only
+    });
+  }
+
+  async function unregisterBackgroundFetchAsync() {
+    return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+  }
+
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+
+  useEffect(() => {
+    AppState.addEventListener("change", _handleAppStateChange);
+    return () => {
+      AppState.removeEventListener("change", _handleAppStateChange);
+    };
+  }, []);
+
+  const _handleAppStateChange = (nextAppState) => {
+    if (
+      appState.current.match(/inactive|background/) &&
+      nextAppState === "active"
+    ) {
+      console.log("App has come to the foreground!");
+    }
+
+    appState.current = nextAppState;
+    setAppStateVisible(appState.current);
+    console.log("AppState", appState.current);
+  };
+
   LogBox.ignoreLogs(["Setting a timer"]);
   let interval;
   const [requests, setrequests] = useState([]);
@@ -73,6 +127,7 @@ const RequestsScreen = () => {
   const handleListener = async () => {
     if (occupied) return;
     setrequests([]);
+    console.log("in listener");
     const q = query(collection(db, "Ride Requests"));
     const unsub = onSnapshot(q, async (querySnapshot) => {
       for (let index = 0; index < querySnapshot?.docs?.length; index++) {
@@ -94,7 +149,13 @@ const RequestsScreen = () => {
   }, []);
 
   useEffect(() => {
+    start();
+  }, [occupied, online]);
+
+  const start = async () => {
     if (occupied === false && online === true) {
+      console.log("before back");
+      await registerBackgroundFetchAsync();
       interval = setInterval(() => {
         handleListener();
       }, 15000);
@@ -106,7 +167,7 @@ const RequestsScreen = () => {
     } else if (online === false) {
       setrequests([]);
     }
-  }, [occupied, online]);
+  };
 
   useEffect(() => {
     if (!accepted) return;

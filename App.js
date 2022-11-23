@@ -14,6 +14,7 @@ import tw from "twrnc";
 import * as Location from "expo-location";
 import Navigations from "./components/Navigations";
 import { useKeepAwake } from "expo-keep-awake";
+import * as Notifications from "expo-notifications";
 
 export default function App() {
   useDeviceContext(tw);
@@ -32,6 +33,14 @@ export default function App() {
       setLocation(location);
     })();
   }, []);
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
 
   return (
     <>
