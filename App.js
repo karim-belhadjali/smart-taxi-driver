@@ -20,7 +20,9 @@ export default function App() {
   useDeviceContext(tw);
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [notification, setnotification] = useState();
   useKeepAwake();
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -41,6 +43,21 @@ export default function App() {
       shouldSetBadge: true,
     }),
   });
+
+  useEffect(() => {
+    Notifications.addNotificationReceivedListener(_handleNotification);
+    Notifications.addNotificationResponseReceivedListener(
+      _handleNotificationResponse
+    );
+  }, []);
+
+  const _handleNotification = (notification) => {
+    setnotification(notification);
+  };
+
+  const _handleNotificationResponse = (response) => {
+    console.log(response);
+  };
 
   return (
     <>

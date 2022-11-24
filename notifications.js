@@ -11,7 +11,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export default function Notification() {
+export default function useNotification() {
   const [expoPushToken, setExpoPushToken] = useState("");
   const [notification, setNotification] = useState(false);
   const notificationListener = useRef();
@@ -58,25 +58,20 @@ export async function schedulePushNotification() {
   return id;
 }
 
-async function registerForPushNotificationsAsync() {
+export const registerForPushNotificationsAsync = async () => {
   let token;
-  if (Constants.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== "granted") {
-      alert("Failed to get push token for push notification!");
-      return;
-    }
-    token = (await Notifications.getExpoPushTokenAsync()).data;
-    console.log(token);
-  } else {
-    alert("Must use physical device for Push Notifications");
+
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
   }
+  if (finalStatus !== "granted") {
+    alert("Failed to get push token for push notification!");
+    return;
+  }
+  token = (await Notifications.getExpoPushTokenAsync()).data;
 
   if (Platform.OS === "android") {
     Notifications.setNotificationChannelAsync("default", {
@@ -91,7 +86,7 @@ async function registerForPushNotificationsAsync() {
   }
 
   return token;
-}
+};
 
 export async function cancelNotification(notifId) {
   await Notifications.cancelScheduledNotificationAsync(notifId);

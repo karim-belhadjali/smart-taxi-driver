@@ -7,8 +7,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectCurrentUser, setResting } from "../app/slices/navigationSlice";
 import { useNavigation } from "@react-navigation/core";
 import WaitingCar from "../assets/svg/WaitingCar";
+import { LogBox } from "react-native";
 
 const WaitingScreen = () => {
+  LogBox.ignoreLogs(["Setting a timer"]);
+
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const currentDrive = useSelector(selectCurrentUser);

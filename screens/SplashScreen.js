@@ -33,9 +33,11 @@ import { Alert } from "react-native";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import AppLink from "react-native-app-link";
+import { registerForPushNotificationsAsync } from "../notifications";
 
 export default function App() {
   const navigation = useNavigation();
+  useNavigation();
 
   const [reload, setreload] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
