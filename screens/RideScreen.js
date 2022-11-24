@@ -121,9 +121,13 @@ export default function RideScreen() {
 
   useEffect(() => {
     startLocation();
+    tasks();
   }, []);
+  const tasks = async () => {
+    let loc = await TaskManager.getRegisteredTasksAsync();
+    console.log(loc);
+  };
   useEffect(() => {
-    console.log(currentRide);
     listenToCancel();
   }, [currentRide]);
 
@@ -185,12 +189,13 @@ export default function RideScreen() {
 
   const startLocation = async () => {
     await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-      accuracy: Location.Accuracy.BestForNavigation,
+      accuracy: Location.Accuracy.Highest,
       timeInterval: 5000,
-      distanceInterval: 20,
+      distanceInterval: 10,
       foregroundService: {
         notificationTitle: "En ligne ... ",
         notificationBody: "Mise à jour de votre position en cours ...",
+        killServiceOnDestroy: false,
       },
 
       showsBackgroundLocationIndicator: true,
@@ -337,16 +342,16 @@ export default function RideScreen() {
             >
               <MapCarSvg />
             </Marker>
-            {origin && currentLocation && (
-              <MapViewDirections
-                origin={`${currentLocation.location.lat},${currentLocation.location.lng}`}
-                destination={`${origin.location.lat},${origin.location.lng}`}
-                apikey={GOOGLE_MAPS_API_KEY}
-                strokeWidth={3}
-                strokeColor="blue"
-                lineDashPattern={[0]}
-              />
-            )}
+            {/* {origin && currentLocation && (
+              // <MapViewDirections
+              //   origin={`${currentLocation.location.lat},${currentLocation.location.lng}`}
+              //   destination={`${origin.location.lat},${origin.location.lng}`}
+              //   apikey={GOOGLE_MAPS_API_KEY}
+              //   strokeWidth={3}
+              //   strokeColor="blue"
+              //   lineDashPattern={[0]}
+              // />
+            )} */}
             {origin && (
               <Marker
                 coordinate={{
@@ -362,7 +367,7 @@ export default function RideScreen() {
                 <UserLocationSvg />
               </Marker>
             )}
-            {destination && currentLocation && !origin && (
+            {/* {destination && currentLocation && !origin && (
               <MapViewDirections
                 origin={`${currentLocation.location.lat},${currentLocation.location.lng}`}
                 destination={`${destination.location.lat},${destination.location.lng}`}
@@ -371,7 +376,7 @@ export default function RideScreen() {
                 strokeColor="blue"
                 lineDashPattern={[0]}
               />
-            )}
+            )} */}
             {destination && !origin && (
               <Marker
                 coordinate={{

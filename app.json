@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "driver",
-    "slug": "driver",
-    "version": "1.0.3",
+    "name": "Beem Smart driver",
+    "slug": "Beem-driver",
+    "version": "1.0.5",
     "orientation": "portrait",
     "scheme": "com.beem.smartdriver",
     "icon": "./assets/icon.png",
@@ -28,7 +28,7 @@
       "config": {
         "googleMaps": { "apiKey": "AIzaSyC68H_H39puGTSmrl2XNhS2d9I7YXIn3fo" }
       },
-      "versionCode": 2
+      "versionCode": 4
     },
     "web": {
       "favicon": "./assets/favicon.png"

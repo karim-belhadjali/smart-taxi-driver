@@ -43,7 +43,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState(null);
   const dispatch = useDispatch();
 
-  const version = "1.0.3";
+  const version = "1.0.5";
 
   useFonts({
     "Poppins-Black": require("../assets/fonts/Poppins/Poppins-Black.ttf"),
@@ -163,7 +163,7 @@ export default function App() {
               text: "Mettre à jour",
               onPress: () => {
                 AppLink.openInStore({
-                  appName: "Smart Driver",
+                  appName: "Beem Smart Driver",
                   playStoreId: "com.beem.smartdriver",
                 });
               },

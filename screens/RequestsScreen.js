@@ -109,8 +109,6 @@ const RequestsScreen = () => {
 
   const getToken = async () => {
     let token = await registerForPushNotificationsAsync();
-    console.log("user", user.uid);
-    console.log("token", token);
     setDoc(
       doc(db, "drivers", user.uid),
       {

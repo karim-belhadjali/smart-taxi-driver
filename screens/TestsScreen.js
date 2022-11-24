@@ -13,7 +13,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
   if (data) {
     const { locations } = data;
     // do something with the locations captured in the background
-    console.log("Updating Location", locations);
+    // console.log("Updating Location", locations);
   }
 });
 
