@@ -25,7 +25,7 @@ import {
 } from "../app/slices/navigationSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setDestination, setOrigin } from "../app/slices/navigationSlice";
-const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
+const GOOGLE_MAPS_API_KEY = "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw";
 import tw from "twrnc";
 import { LogBox } from "react-native";
 

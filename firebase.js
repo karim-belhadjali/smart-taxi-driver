@@ -13,19 +13,19 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 // Initialize Firebase
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg",
+  apiKey: "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw",
 
-  authDomain: "smart-taxi-cbb83.firebaseapp.com",
+  authDomain: "beem-smart-taxi.firebaseapp.com",
 
-  projectId: "smart-taxi-cbb83",
+  projectId: "beem-smart-taxi",
 
-  storageBucket: "smart-taxi-cbb83.appspot.com",
+  storageBucket: "beem-smart-taxi.appspot.com",
 
-  messagingSenderId: "92236093593",
+  messagingSenderId: "182743146583",
 
-  appId: "1:92236093593:web:05d5ce13b1b575b60ec008",
+  appId: "1:182743146583:web:9a6b44451e4dc45e308312",
 
-  measurementId: "G-3JHWJ904TK",
+  measurementId: "G-JZN37453SJ",
 };
 
 let app = initializeApp(firebaseConfig);

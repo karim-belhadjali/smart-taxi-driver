@@ -30,7 +30,7 @@ import Loader from "react-native-three-dots";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import AppLink from "react-native-app-link";
 import { registerForPushNotificationsAsync } from "../notifications";
@@ -43,7 +43,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState(null);
   const dispatch = useDispatch();
 
-  const version = "1.0.5";
+  const version = "1.1.0";
 
   useFonts({
     "Poppins-Black": require("../assets/fonts/Poppins/Poppins-Black.ttf"),
@@ -76,26 +76,64 @@ export default function App() {
           );
           return;
         }
+        console.log("before location");
 
         await Location.getCurrentPositionAsync({})
           .then(async (location) => {
             const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${location.coords.latitude},${location.coords.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
             const response = await fetch(url);
             const data = await response.json();
-            dispatch(
-              setCurrentLocation({
-                location: {
-                  lat: location.coords.latitude,
-                  lng: location.coords.longitude,
-                },
-                description: data.results[0]?.formatted_address,
-              })
+
+            const distance = await getTravelTime(
+              location.coords.latitude,
+              location.coords.longitude
             );
-            setErrorMsg(null);
-            await getVersion();
+            console.log("location");
+            if (
+              distance?.status !== "NOT_FOUND" &&
+              distance?.status !== "ZERO_RESULTS"
+            ) {
+              dispatch(
+                setCurrentLocation({
+                  location: {
+                    lat: location.coords.latitude,
+                    lng: location.coords.longitude,
+                  },
+                  description: data.results[0]?.formatted_address,
+                })
+              );
+              setErrorMsg(null);
+              await getVersion();
+            } else {
+              Alert.alert(
+                "Changer votre position",
+                "Veuillez changer votre position, nous n'avons pas pu obtenir vos informations actuelles",
+                [
+                  {
+                    text: "Réessayer",
+                    onPress: () => {
+                      setreload(!reload);
+                    },
+                  },
+                ]
+              );
+            }
           })
           .catch((e) => {
-            setErrorMsg(e.message);
+            console.log(e.message);
+
+            Alert.alert(
+              "Connexion Internet faible",
+              "Aucune connexion Internet n'est détectée, veuillez réessayer",
+              [
+                {
+                  text: "Réessayer",
+                  onPress: () => {
+                    setreload(!reload);
+                  },
+                },
+              ]
+            );
           });
       } else {
         setErrorMsg("No Internet Connection is detected please try again");
@@ -115,21 +153,36 @@ export default function App() {
     })();
   }, [reload]);
 
+  const getTravelTime = async (destinationlat, destinationlng) => {
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${
+      36.7389 + "," + 10.2848
+    }&destinations=${
+      destinationlat + "," + destinationlng
+    }&key=${GOOGLE_MAPS_API_KEY}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.rows[0].elements[0];
+  };
   const getUser = async (key) => {
     try {
       const value = await AsyncStorage.getItem(key);
       if (value !== null) {
         let driver = JSON.parse(value);
-        dispatch(setCurrentUser(driver));
-        navigation.navigate("WaitingScreen");
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: "WaitingScreen",
-            },
-          ],
-        });
+        const docRef = doc(db, "drivers", driver.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          let driverDb = docSnap.data();
+          dispatch(setCurrentUser(driverDb));
+          navigation.navigate("WaitingScreen");
+          navigation.reset({
+            index: 0,
+            routes: [
+              {
+                name: "WaitingScreen",
+              },
+            ],
+          });
+        }
       } else {
         navigation.navigate("LoginScreen");
         navigation.reset({
@@ -181,7 +234,6 @@ export default function App() {
       await getUser("Driver");
     }
   };
-
   return (
     <View style={stylesheet.styleRectangle1}>
       <View

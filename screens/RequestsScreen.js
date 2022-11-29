@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Animated,
-  AppState,
 } from "react-native";
 import tw from "twrnc";
 import { StatusBar } from "react-native";
@@ -35,8 +34,9 @@ import {
   deleteDoc,
   getDoc,
   getDocs,
+  where,
 } from "firebase/firestore";
-import { functions, httpsCallable, db } from "../firebase";
+import { db } from "../firebase";
 import { LogBox } from "react-native";
 import { setOccupied } from "../app/slices/navigationSlice";
 import Entypo from "react-native-vector-icons/Entypo";
@@ -45,19 +45,12 @@ import ToggleSwitch from "toggle-switch-react-native";
 import { Dimensions } from "react-native";
 import { Audio } from "expo-av";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
-import {
-  registerForPushNotificationsAsync,
-  schedulePushNotification,
-} from "../notifications";
-import * as BackgroundFetch from "expo-background-fetch";
-import * as TaskManager from "expo-task-manager";
-
-const BACKGROUND_FETCH_TASK = "background-fetch";
+const GOOGLE_MAPS_API_KEY = "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw";
+import { registerForPushNotificationsAsync } from "../notifications";
 
 const RequestsScreen = () => {
   LogBox.ignoreLogs(["Setting a timer"]);
-  let interval;
+  let interval = undefined;
   const [requests, setrequests] = useState([]);
   const [occupied, setoccupied] = useState(false);
   const [currentRide, setcurrentRide] = useState();
@@ -81,26 +74,47 @@ const RequestsScreen = () => {
   const navigation = useNavigation();
 
   const handleListener = async () => {
-    if (occupied) return;
+    if (occupied && !online) return;
     setrequests([]);
-    const q = query(collection(db, "Ride Requests"));
-    const unsub = onSnapshot(q, async (querySnapshot) => {
-      for (let index = 0; index < querySnapshot?.docs?.length; index++) {
-        const docu = querySnapshot.docs[index].data();
+    const q = query(
+      collection(db, "Ride Requests"),
+      where("driverAccepted", "==", false),
+      where("canceled", "==", false)
+    );
 
-        if (docu.driverAccepted === false) {
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach(async (doc) => {
+      // doc.data() is never undefined for query doc snapshots
+      const docu = doc.data();
+      console.log(docu);
+      const distanceInfo = await getTravelTime(
+        currentLocation.location.lat,
+        currentLocation.location.lng,
+        docu.origin.location.lat,
+        docu.origin.location.lng
+      );
+
+      if (
+        distanceInfo?.status !== "NOT_FOUND" &&
+        distanceInfo?.status !== "ZERO_RESULTS"
+      ) {
+        console.log(parseFloat(distanceInfo?.distance?.text));
+        if (parseFloat(distanceInfo?.distance?.text) <= 3) {
           setrequests((prevState) => [...prevState, docu]);
           playSound();
         }
-        unsub();
+      } else {
+        console.log(distanceInfo);
       }
-      unsub();
     });
   };
 
   useEffect(() => {
     setoccupied(false);
     setonline(true);
+    if (interval === undefined) {
+      handleListener();
+    }
   }, []);
 
   useEffect(() => {
@@ -127,10 +141,10 @@ const RequestsScreen = () => {
       // await registerBackgroundFetchAsync();
       interval = setInterval(() => {
         handleListener();
-      }, 15000);
+      }, 10000);
       return () => clearInterval(interval);
     } else if (occupied === true) {
-      if (interval) {
+      if (interval !== undefined) {
         clearInterval(interval);
       }
     } else if (online === false) {
@@ -140,6 +154,20 @@ const RequestsScreen = () => {
 
   useEffect(() => {
     if (!accepted) return;
+    setTimeout(async () => {
+      const docRef = doc(db, "Ride Requests", currentRideRequest?.user.phone);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        let ride = docSnap.data();
+        if (ride?.clientAccepted === false && ride?.canceled === false) {
+          setDoc(
+            doc(db, "Ride Requests", currentRideRequest?.user.phone),
+            { canceled: true },
+            { merge: true }
+          );
+        }
+      }
+    }, 30000);
     const unsub = onSnapshot(
       doc(db, "Ride Requests", currentRideRequest?.user.phone),
       async (current) => {
@@ -167,7 +195,7 @@ const RequestsScreen = () => {
                 ],
               });
               unsub();
-            }, 5000);
+            }, 3000);
           } else if (request.canceled) {
             deleteDoc(doc(db, "Ride Requests", request?.user.phone));
             dispatch(setRide(null));
@@ -178,6 +206,11 @@ const RequestsScreen = () => {
             unsub();
           }
         } else {
+          dispatch(setRide(null));
+          setcurrentTimeRideInfo(null);
+          setcurrentRide(null);
+          setoccupied(false);
+          setaccepted(false);
           unsub();
         }
       }
@@ -210,13 +243,7 @@ const RequestsScreen = () => {
       return;
     }
 
-    if (parseFloat(distanceInfo?.distance?.text) > 5) {
-      setTimeout(() => {
-        handleChangeRequestValue(docref, request, distanceInfo);
-      }, 2000);
-    } else {
-      handleChangeRequestValue(docref, request, distanceInfo);
-    }
+    handleChangeRequestValue(docref, request, distanceInfo);
   };
 
   const handleChangeRequestValue = async (docref, request, distanceInfo) => {
@@ -229,6 +256,7 @@ const RequestsScreen = () => {
         } else if (sfDoc.data().driverAccepted === true) {
           console.log("Document already accepted!");
           setOccupied(false);
+          handleAnnuler(currentRideRequest);
           return;
         } else {
           if (distanceInfo?.status !== "ZERO_RESULTS") {
@@ -470,7 +498,8 @@ const RequestsScreen = () => {
         {requests.length < 1 && (
           <View style={tw`w-full h-[80%] justify-center items-center`}>
             <Text style={{ fontFamily: "Poppins-Regular", fontSize: 15 }}>
-              Pas de demande disponible pour le moment
+              Aucune demande disponible pour le moment ou les demandes sont
+              éloignées de votre position.
             </Text>
           </View>
         )}

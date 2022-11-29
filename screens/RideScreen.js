@@ -46,7 +46,7 @@ import CanceledPage from "../components/CanceledPage";
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyCZ_g1IKyfqx-UNjhGKnIbZKPF9rAzVJwg";
+const GOOGLE_MAPS_API_KEY = "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw";
 const LOCATION_TASK_NAME = "background-location-task";
 
 export default function RideScreen() {

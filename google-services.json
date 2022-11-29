@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "92236093593",
-    "project_id": "smart-taxi-cbb83",
-    "storage_bucket": "smart-taxi-cbb83.appspot.com"
+    "project_number": "182743146583",
+    "project_id": "beem-smart-taxi",
+    "storage_bucket": "beem-smart-taxi.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:92236093593:android:91a5cff4eaafa85b0ec008",
+        "mobilesdk_app_id": "1:182743146583:android:70d3f24af3338a8c308312",
         "android_client_info": {
           "package_name": "com.beem.smartdriver"
         }
       },
       "oauth_client": [
         {
-          "client_id": "92236093593-r9hqjpff6k8o4p70slgf6c85ssnrpnma.apps.googleusercontent.com",
+          "client_id": "182743146583-bpdst9hosi1110f5c6uvp0t5a790m9k5.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCoK7B3ZYUDl_dTWDzD1ayFHhXJWh4JgHc"
+          "current_key": "AIzaSyCXi85DgRK1vio4wUzZnBKvMTaynTFE6d4"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "92236093593-r9hqjpff6k8o4p70slgf6c85ssnrpnma.apps.googleusercontent.com",
+              "client_id": "182743146583-bpdst9hosi1110f5c6uvp0t5a790m9k5.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
