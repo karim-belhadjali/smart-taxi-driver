@@ -44,6 +44,7 @@ import Entypo from "react-native-vector-icons/Entypo";
 import ToggleSwitch from "toggle-switch-react-native";
 import { Dimensions } from "react-native";
 import { Audio } from "expo-av";
+import * as Location from "expo-location";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw";
 import { registerForPushNotificationsAsync } from "../notifications";
@@ -112,9 +113,6 @@ const RequestsScreen = () => {
   useEffect(() => {
     setoccupied(false);
     setonline(true);
-    if (interval === undefined) {
-      handleListener();
-    }
   }, []);
 
   useEffect(() => {
@@ -139,13 +137,16 @@ const RequestsScreen = () => {
   const start = async () => {
     if (occupied === false && online === true) {
       // await registerBackgroundFetchAsync();
-      interval = setInterval(() => {
-        handleListener();
-      }, 10000);
-      return () => clearInterval(interval);
+      if (interval == undefined) {
+        interval = setInterval(() => {
+          handleListener();
+        }, 10000);
+        return () => clearInterval(interval);
+      }
     } else if (occupied === true) {
       if (interval !== undefined) {
         clearInterval(interval);
+        interval = undefined;
       }
     } else if (online === false) {
       setrequests([]);
@@ -229,24 +230,39 @@ const RequestsScreen = () => {
   const handleAccept = async (request) => {
     setcurrentRideRequest(request);
     setoccupied(true);
-    const docref = doc(db, "Ride Requests", request?.user.phone);
-    const distanceInfo = await getTravelTime(
-      currentLocation.location.lat,
-      currentLocation.location.lng,
-      request.origin.location.lat,
-      request.origin.location.lng
-    );
+    await Location.getCurrentPositionAsync({}).then(async (location) => {
+      const docref = doc(db, "Ride Requests", request?.user.phone);
 
-    if (distanceInfo?.status === "NOT_FOUND") {
-      handleAnnuler(request);
-      console.log("Document updated!");
-      return;
-    }
+      const distanceInfo = await getTravelTime(
+        location.coords.latitude,
+        location.coords.longitude,
+        request.origin.location.lat,
+        request.origin.location.lng
+      );
 
-    handleChangeRequestValue(docref, request, distanceInfo);
+      if (distanceInfo?.status === "NOT_FOUND") {
+        handleAnnuler(request);
+        console.log("Document updated!");
+        return;
+      }
+
+      handleChangeRequestValue(
+        docref,
+        request,
+        distanceInfo,
+        location.coords.latitude,
+        location.coords.longitude
+      );
+    });
   };
 
-  const handleChangeRequestValue = async (docref, request, distanceInfo) => {
+  const handleChangeRequestValue = async (
+    docref,
+    request,
+    distanceInfo,
+    lat,
+    longi
+  ) => {
     try {
       await runTransaction(db, async (transaction) => {
         const sfDoc = await transaction.get(docref);
@@ -266,7 +282,10 @@ const RequestsScreen = () => {
               driverDistance: parseFloat(distanceInfo?.distance?.text),
               driverInfo: {
                 carType: user?.carType,
-                location: currentLocation,
+                location: {
+                  location: { lat: lat, lng: longi },
+                  description: currentLocation.description,
+                },
                 name: user?.fullName,
                 phone: user?.mainPhone,
               },
