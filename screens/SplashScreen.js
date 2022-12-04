@@ -43,7 +43,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState(null);
   const dispatch = useDispatch();
 
-  const version = "1.1.1";
+  const version = "1.1.2";
 
   useFonts({
     "Poppins-Black": require("../assets/fonts/Poppins/Poppins-Black.ttf"),
