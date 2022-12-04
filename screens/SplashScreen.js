@@ -14,7 +14,7 @@ import {
 import * as Location from "expo-location";
 import * as Network from "expo-network";
 import * as SplashScreen from "expo-splash-screen";
-import { GOOGLE_MAPS_API_KEY } from "@env";
+const GOOGLE_MAPS_API_KEY = "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw";
 
 import {
   setCurrentLocation,
@@ -84,47 +84,24 @@ export default function App() {
             const response = await fetch(url);
             const data = await response.json();
 
-            const distance = await getTravelTime(
-              location.coords.latitude,
-              location.coords.longitude
+            dispatch(
+              setCurrentLocation({
+                location: {
+                  lat: location.coords.latitude,
+                  lng: location.coords.longitude,
+                },
+                description: data.results[0]?.formatted_address,
+              })
             );
-            console.log("location");
-            if (
-              distance?.status !== "NOT_FOUND" &&
-              distance?.status !== "ZERO_RESULTS"
-            ) {
-              dispatch(
-                setCurrentLocation({
-                  location: {
-                    lat: location.coords.latitude,
-                    lng: location.coords.longitude,
-                  },
-                  description: data.results[0]?.formatted_address,
-                })
-              );
-              setErrorMsg(null);
-              await getVersion();
-            } else {
-              Alert.alert(
-                "Changer votre position",
-                "Veuillez changer votre position, nous n'avons pas pu obtenir vos informations actuelles",
-                [
-                  {
-                    text: "Réessayer",
-                    onPress: () => {
-                      setreload(!reload);
-                    },
-                  },
-                ]
-              );
-            }
+            setErrorMsg(null);
+            await getVersion();
           })
           .catch((e) => {
             console.log(e.message);
 
             Alert.alert(
-              "Connexion Internet faible",
-              "Aucune connexion Internet n'est détectée, veuillez réessayer",
+              "Changer votre position",
+              "Veuillez changer votre position, nous n'avons pas pu obtenir vos informations actuelles",
               [
                 {
                   text: "Réessayer",
@@ -153,16 +130,6 @@ export default function App() {
     })();
   }, [reload]);
 
-  const getTravelTime = async (destinationlat, destinationlng) => {
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${
-      36.7389 + "," + 10.2848
-    }&destinations=${
-      destinationlat + "," + destinationlng
-    }&key=${GOOGLE_MAPS_API_KEY}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    return data.rows[0].elements[0];
-  };
   const getUser = async (key) => {
     try {
       const value = await AsyncStorage.getItem(key);

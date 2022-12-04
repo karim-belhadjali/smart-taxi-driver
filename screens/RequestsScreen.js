@@ -16,6 +16,7 @@ import {
   selectCurrentLocation,
   selectCurrentUser,
   selectVersion,
+  setCurrentLocation,
   setDestination,
   setOrigin,
   setRide,
@@ -87,26 +88,30 @@ const RequestsScreen = () => {
     querySnapshot.forEach(async (doc) => {
       // doc.data() is never undefined for query doc snapshots
       const docu = doc.data();
-      console.log(docu);
-      const distanceInfo = await getTravelTime(
-        currentLocation.location.lat,
-        currentLocation.location.lng,
-        docu.origin.location.lat,
-        docu.origin.location.lng
-      );
 
-      if (
-        distanceInfo?.status !== "NOT_FOUND" &&
-        distanceInfo?.status !== "ZERO_RESULTS"
-      ) {
-        console.log(parseFloat(distanceInfo?.distance?.text));
-        if (parseFloat(distanceInfo?.distance?.text) <= 3) {
+      await Location.getCurrentPositionAsync({}).then(async (location) => {
+        dispatch(
+          setCurrentLocation({
+            location: {
+              lat: location.coords.latitude,
+              lng: location.coords.longitude,
+            },
+            description: "driver location",
+          })
+        );
+        const distanceInKm = distance(
+          docu.origin.location.lat,
+          location.coords.latitude,
+          docu.origin.location.lng,
+          location.coords.longitude
+        );
+        console.log(distanceInKm);
+
+        if (distanceInKm <= 5) {
           setrequests((prevState) => [...prevState, docu]);
           playSound();
         }
-      } else {
-        console.log(distanceInfo);
-      }
+      });
     });
   };
 
@@ -230,36 +235,28 @@ const RequestsScreen = () => {
   const handleAccept = async (request) => {
     setcurrentRideRequest(request);
     setoccupied(true);
-    await Location.getCurrentPositionAsync({}).then(async (location) => {
-      const docref = doc(db, "Ride Requests", request?.user.phone);
+    const docref = doc(db, "Ride Requests", request?.user.phone);
 
-      const distanceInfo = await getTravelTime(
-        location.coords.latitude,
-        location.coords.longitude,
-        request.origin.location.lat,
-        request.origin.location.lng
-      );
+    const distanceInKm = distance(
+      currentLocation.location.lat,
+      request.origin.location.lat,
+      currentLocation.location.lng,
+      request.origin.location.lng
+    );
 
-      if (distanceInfo?.status === "NOT_FOUND") {
-        handleAnnuler(request);
-        console.log("Document updated!");
-        return;
-      }
-
-      handleChangeRequestValue(
-        docref,
-        request,
-        distanceInfo,
-        location.coords.latitude,
-        location.coords.longitude
-      );
-    });
+    handleChangeRequestValue(
+      docref,
+      request,
+      distanceInKm,
+      currentLocation.location.lat,
+      currentLocation.location.lng
+    );
   };
 
   const handleChangeRequestValue = async (
     docref,
     request,
-    distanceInfo,
+    distanceInKm,
     lat,
     longi
   ) => {
@@ -275,34 +272,20 @@ const RequestsScreen = () => {
           handleAnnuler(currentRideRequest);
           return;
         } else {
-          if (distanceInfo?.status !== "ZERO_RESULTS") {
-            transaction.update(docref, {
-              driverAccepted: true,
-              driverTime: distanceInfo?.duration?.text,
-              driverDistance: parseFloat(distanceInfo?.distance?.text),
-              driverInfo: {
-                carType: user?.carType,
-                location: {
-                  location: { lat: lat, lng: longi },
-                  description: currentLocation.description,
-                },
-                name: user?.fullName,
-                phone: user?.mainPhone,
+          transaction.update(docref, {
+            driverAccepted: true,
+            driverTime: "~5",
+            driverDistance: distanceInKm,
+            driverInfo: {
+              carType: user?.carType,
+              location: {
+                location: { lat: lat, lng: longi },
+                description: "driver location",
               },
-            });
-          } else {
-            transaction.update(docref, {
-              driverAccepted: true,
-              driverTime: "3",
-              driverDistance: 1,
-              driverInfo: {
-                carType: user?.carType,
-                location: currentLocation,
-                name: user?.fullName,
-                phone: user?.mainPhone,
-              },
-            });
-          }
+              name: user?.fullName,
+              phone: user?.mainPhone,
+            },
+          });
 
           setcurrentRide(request);
           handleAnnuler(request);
@@ -322,6 +305,25 @@ const RequestsScreen = () => {
     );
     setrequests(newRequests);
   };
+
+  function distance(lat1, lat2, lon1, lon2) {
+    // The math module contains a function
+    // named toRadians which converts from
+    // degrees to radians.
+    lon1 = (lon1 * Math.PI) / 180;
+    lon2 = (lon2 * Math.PI) / 180;
+    lat1 = (lat1 * Math.PI) / 180;
+    lat2 = (lat2 * Math.PI) / 180; // Haversine formula
+    let dlon = lon2 - lon1;
+    let dlat = lat2 - lat1;
+    let a =
+      Math.pow(Math.sin(dlat / 2), 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(dlon / 2), 2);
+    let c = 2 * Math.asin(Math.sqrt(a));
+    // Radius of earth in kilometers. Use 3956 // for miles
+    let r = 6371; // calculate the result
+    return c * r;
+  }
 
   const getTravelTime = async (
     originlat,
