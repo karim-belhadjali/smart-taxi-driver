@@ -14,7 +14,7 @@ import {
 import * as Location from "expo-location";
 import * as Network from "expo-network";
 import * as SplashScreen from "expo-splash-screen";
-const GOOGLE_MAPS_API_KEY = "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw";
+const GOOGLE_MAPS_API_KEY = "";
 
 import {
   setCurrentLocation,
