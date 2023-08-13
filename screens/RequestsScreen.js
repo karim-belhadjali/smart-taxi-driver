@@ -47,7 +47,7 @@ import { Dimensions } from "react-native";
 import { Audio } from "expo-av";
 import * as Location from "expo-location";
 
-const GOOGLE_MAPS_API_KEY = "AIzaSyA_MBIonc47YR-XXXSReEO0gBBsMV_3Ppw";
+const GOOGLE_MAPS_API_KEY = "";
 import { registerForPushNotificationsAsync } from "../notifications";
 
 const RequestsScreen = () => {
